@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>euitube</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>euitube</h1>
 
+  <!-- URL 입력 -->
+  <div class="input-area">
+    <input
+      type="text"
+      id="videoUrl"
+      placeholder="YouTube 또는 YouTube Music 주소를 붙여넣기"
+    />
+    <button id="loadButton">불러오기</button>
+  </div>
+
+  <!-- 곡 정보 표시 영역 -->
+  <div class="info-area">
+    <img id="thumbnail" alt="thumbnail" />
+    <div>
+      <div id="title">제목</div>
+      <div id="artist">아티스트</div>
+    </div>
+  </div>
+
+  <!-- 플레이어가 들어갈 영역 -->
+  <div id="player"></div>
+
+  <!-- YouTube Iframe API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="script.js"></script>
+</body>
+</html>
