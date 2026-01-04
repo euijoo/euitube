@@ -384,17 +384,26 @@ body {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;           /* 32 → 40으로 키우기 */
+  height: 40px;
   border-radius: 999px;
   border: none;
-  background: #1f2937;
-  color: #e5e7eb;
+  background: #10b981;   /* 재생 버튼 느낌의 포인트 색 */
+  color: #020617;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 18px;       /* 아이콘(▶/⏸) 조금 크게 */
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  background: #059669;
+}
+
 
 /* 반응형: 작은 화면에서도 꽉 차게 */
 
