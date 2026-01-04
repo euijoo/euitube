@@ -12,7 +12,7 @@
     <div id="lock-screen" class="lock-screen">
       <div class="lock-card">
         <h1 class="logo">ej_tube</h1>
-        <p class="lock-text">나만의 플레이어에 입장하려면 비밀번호를 입력하세요.</p>
+        <p class="lock-text">나만의 YouTube 플레이어에 입장하려면 비밀번호를 입력하세요.</p>
         <input
           type="password"
           id="passwordInput"
@@ -20,7 +20,7 @@
           placeholder="비밀번호"
         />
         <button id="unlockButton" class="btn primary">입장</button>
-        <p class="hint">※ 연습용이니까, 비밀번호는 코드 안에서 바꿀 수 있어요.</p>
+        <p class="hint">※ 연습용이라 코드에서 비밀번호를 바꿀 수 있어요.</p>
         <p id="lockError" class="error-text"></p>
       </div>
     </div>
@@ -34,23 +34,21 @@
         </div>
       </header>
 
-      <main class="layout">
-        <!-- 왼쪽: 플레이어 영역 -->
-        <section class="player-pane">
-          <!-- 현재 곡 정보 -->
-          <div class="now-playing">
-            <img id="thumbnail" class="cover" alt="thumbnail" />
-            <div class="track-meta">
-              <div id="title" class="track-title">제목</div>
-              <div id="artist" class="track-artist">아티스트</div>
-            </div>
-          </div>
+      <main class="main-layout">
+        <!-- 상단 탭 -->
+        <div class="tabs">
+          <button id="tabAdd" class="tab active">추가하기</button>
+          <button id="tabList" class="tab">내 리스트</button>
+        </div>
 
-          <!-- YouTube 플레이어 -->
-          <div id="player" class="player-frame"></div>
+        <!-- 추가 페이지 -->
+        <section id="add-view" class="view active-view">
+          <h2 class="view-title">영상/음악 추가</h2>
+          <p class="view-desc">
+            YouTube 또는 YouTube Music 주소를 붙여넣고 추가 버튼을 누르세요.
+          </p>
 
-          <!-- URL 추가 폼 -->
-          <div class="input-area">
+          <div class="input-area big">
             <input
               type="text"
               id="videoUrl"
@@ -60,13 +58,30 @@
           </div>
         </section>
 
-        <!-- 오른쪽: 최근 추가 리스트 -->
-        <section class="list-pane">
-          <div class="list-header">
-            <h2>내 리스트</h2>
-            <button id="clearListButton" class="btn subtle">전체 비우기</button>
+        <!-- 리스트 + 플레이어 페이지 -->
+        <section id="list-view" class="view">
+          <div class="layout-2col">
+            <!-- 왼쪽: 플레이어 -->
+            <section class="player-pane">
+              <div class="now-playing">
+                <img id="thumbnail" class="cover" alt="thumbnail" />
+                <div class="track-meta">
+                  <div id="title" class="track-title">제목</div>
+                  <div id="artist" class="track-artist">아티스트</div>
+                </div>
+              </div>
+              <div id="player" class="player-frame"></div>
+            </section>
+
+            <!-- 오른쪽: 리스트 -->
+            <section class="list-pane">
+              <div class="list-header">
+                <h2>내 리스트</h2>
+                <button id="clearListButton" class="btn subtle">전체 비우기</button>
+              </div>
+              <ul id="trackList" class="track-list"></ul>
+            </section>
           </div>
-          <ul id="trackList" class="track-list"></ul>
         </section>
       </main>
     </div>
