@@ -46,6 +46,7 @@ let tracks = []; // { id(문서ID), videoId, title, channel, thumbnail, addedAt 
 let currentTrackId = null;
 
 // ===== DOM 참조 =====
+const miniPlayPauseBtn = document.getElementById("miniPlayPauseBtn");
 
 // 로그인 화면
 const loginScreen = document.getElementById("login-screen");
@@ -444,4 +445,16 @@ clearListButton.addEventListener("click", async () => {
   titleEl.textContent = "제목";
   artistEl.textContent = "아티스트";
   thumbnailEl.removeAttribute("src");
+});
+
+miniPlayPauseBtn.addEventListener("click", () => {
+  if (!player) return; // 아직 플레이어가 없으면 무시
+
+  const state = player.getPlayerState(); // -1,0,1,2,... [web:751]
+
+  if (state === YT.PlayerState.PLAYING) {
+    player.pauseVideo();
+  } else {
+    player.playVideo();
+  }
 });
