@@ -4,7 +4,7 @@
 const PASSWORD = "1234";
 
 // YouTube Data API 키
-const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4";
+const API_KEY = "YOUR_API_KEY_HERE";
 
 // localStorage 키
 const STORAGE_KEY = "ej_tube_tracks_v1";
@@ -22,6 +22,11 @@ const mainScreen = document.getElementById("main-screen");
 const passwordInput = document.getElementById("passwordInput");
 const unlockButton = document.getElementById("unlockButton");
 const lockError = document.getElementById("lockError");
+
+const tabAdd = document.getElementById("tabAdd");
+const tabList = document.getElementById("tabList");
+const addView = document.getElementById("add-view");
+const listView = document.getElementById("list-view");
 
 const addButton = document.getElementById("addButton");
 const videoUrlInput = document.getElementById("videoUrl");
@@ -52,6 +57,25 @@ passwordInput.addEventListener("keydown", (e) => {
     unlockButton.click();
   }
 });
+
+// ===== 탭 전환 =====
+
+function showAddView() {
+  tabAdd.classList.add("active");
+  tabList.classList.remove("active");
+  addView.classList.add("active-view");
+  listView.classList.remove("active-view");
+}
+
+function showListView() {
+  tabAdd.classList.remove("active");
+  tabList.classList.add("active");
+  addView.classList.remove("active-view");
+  listView.classList.add("active-view");
+}
+
+tabAdd.addEventListener("click", showAddView);
+tabList.addEventListener("click", showListView);
 
 // ===== 유틸: videoId 추출 =====
 
@@ -117,7 +141,6 @@ function loadTracksFromStorage() {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      // addedAt 기준 내림차순 정렬 (최근 추가 먼저)
       tracks = parsed.sort((a, b) => b.addedAt - a.addedAt);
     } else {
       tracks = [];
@@ -190,14 +213,11 @@ function renderTrackList() {
     li.appendChild(textBox);
     li.appendChild(metaDiv);
 
-    // 클릭 시 재생
     li.addEventListener("click", (e) => {
-      // 삭제 버튼 눌렀을 때는 재생 막기
       if (e.target === delBtn) return;
       playTrack(track.id);
     });
 
-    // 삭제 버튼
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       deleteTrack(track.id);
@@ -234,13 +254,13 @@ async function addTrackFromUrl(url) {
       addedAt: Date.now()
     };
 
-    // 최근 추가가 위로 오도록 앞에 추가
     tracks.unshift(newTrack);
     saveTracksToStorage();
     currentTrackId = newTrack.id;
     updateNowPlaying(newTrack);
     renderTrackList();
     playVideoById(videoId);
+    showListView(); // 추가 후 리스트 화면으로 전환
   } catch (err) {
     console.error(err);
     alert("영상 정보를 불러오는 중 문제가 발생했어요.");
