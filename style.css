@@ -1,15 +1,17 @@
 /* 유튜브 실제 영상 영역은 숨기기 (소리만 재생) */
 .player-container {
+  /* 높이만 0으로 줄여서 화면에서만 숨김 */
   height: 0;
   overflow: hidden;
   margin: 0;
 }
 
 .player-frame {
-  width: 0;
-  height: 0;
+  width: 100%;
+  height: 0;   /* 화면에 안 보이게 */
   border: 0;
 }
+
 
 *,
 *::before,
