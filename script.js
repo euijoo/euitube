@@ -34,7 +34,7 @@ const db = getFirestore(app);
 // ===== 설정 =====
 
 // YouTube Data API 키
-const API_KEY = "YOUR_API_KEY_HERE"; // ← 여기만 네 키로 바꿔줘
+const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4"; // ← 여기만 네 키로 바꿔줘
 
 // Firestore 컬렉션 경로: users/{uid}/tracks
 let currentUser = null; // { uid, email, ... }
