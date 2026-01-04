@@ -482,10 +482,10 @@ miniPlayPauseBtn.addEventListener("click", () => {
   const state = player.getPlayerState();
 
   if (state === YT.PlayerState.PLAYING) {
-    player.pauseVideo();
-    miniPlayPauseBtn.textContent = "▶";
-  } else {
-    player.playVideo();
-    miniPlayPauseBtn.textContent = "⏸";
-  }
+  player.pauseVideo();
+  miniPlayPauseBtn.textContent = "▶";
+} else {
+  player.playVideo();
+  miniPlayPauseBtn.textContent = "⏸";
+}
 });
