@@ -129,7 +129,86 @@ body {
   color: #cbd5f5;
 }
 
-.layout {
+.main-layout {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* 탭 */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  border: none;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.tab.active {
+  background: #10b981;
+  border-color: #10b981;
+  color: #0b1120;
+}
+
+/* 뷰 전환 */
+
+.view {
+  display: none;
+}
+
+.view.active-view {
+  display: block;
+}
+
+/* 추가 페이지 */
+
+.view-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.view-desc {
+  margin: 0 0 20px;
+  color: #cbd5f5;
+  font-size: 14px;
+}
+
+.input-area {
+  display: flex;
+  gap: 8px;
+}
+
+.input-area.big input {
+  padding: 12px 14px;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+}
+
+.input-area input:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+/* 리스트 뷰 내부 2컬럼 */
+
+.layout-2col {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
   gap: 20px;
@@ -178,31 +257,9 @@ body {
 }
 
 .player-frame {
-  margin-bottom: 16px;
+  margin-top: 4px;
   border-radius: 12px;
   overflow: hidden;
-}
-
-/* URL 입력 */
-
-.input-area {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.7);
-  background: rgba(15, 23, 42, 0.9);
-  color: #e5e7eb;
-}
-
-.input-area input:focus {
-  outline: none;
-  border-color: #10b981;
 }
 
 /* 리스트 영역 */
@@ -213,7 +270,7 @@ body {
   padding: 18px 16px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.4);
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
 }
 
@@ -301,7 +358,7 @@ body {
 /* 반응형 */
 
 @media (max-width: 900px) {
-  .layout {
+  .layout-2col {
     grid-template-columns: 1fr;
   }
 
