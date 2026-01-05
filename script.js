@@ -263,10 +263,6 @@ function renderTrackList() {
       li.classList.add("active");
     }
 
-    // 안쪽 컨텐츠 (스와이프되는 영역)
-    const inner = document.createElement("div");
-    inner.className = "track-item-inner";
-
     const img = document.createElement("img");
     img.className = "track-item-thumb";
     img.src = track.thumbnail;
@@ -286,15 +282,21 @@ function renderTrackList() {
     textBox.appendChild(titleDiv);
     textBox.appendChild(artistDiv);
 
-    inner.appendChild(img);
-    inner.appendChild(textBox);
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "track-item-meta";
 
-    // 삭제 버튼 (오른쪽 고정 영역)
     const delBtn = document.createElement("button");
-    delBtn.className = "track-item-delete";
+    delBtn.className = "delete-btn";
     delBtn.textContent = "삭제";
 
-    inner.addEventListener("click", () => {
+    metaDiv.appendChild(delBtn);
+
+    li.appendChild(img);
+    li.appendChild(textBox);
+    li.appendChild(metaDiv);
+
+    li.addEventListener("click", (e) => {
+      if (e.target === delBtn) return;
       playTrack(track.id);
     });
 
@@ -303,13 +305,10 @@ function renderTrackList() {
       await deleteTrack(track.id);
     });
 
-    li.appendChild(inner);
-    li.appendChild(delBtn);
     trackListEl.appendChild(li);
-
-    attachSwipeToDelete(li);
   });
 }
+
 
 function updateNowPlaying(track) {
   titleEl.textContent = track.title;
