@@ -123,7 +123,7 @@ async function fetchVideoInfo(videoId) {
 // ===== YouTube Iframe API 콜백 =====
 
 function onYouTubeIframeAPIReady() {
-  // 최초에는 아무것도 하지 않음
+  // 최초에는 아무것도 하지 않음 (playVideoById에서 player 생성)
 }
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
@@ -142,7 +142,7 @@ function onPlayerStateChange(event) {
 
     const nextIndex = currentIndex + 1;
     if (nextIndex >= tracks.length) {
-      // 마지막 곡이면 멈춤 (원하면 여기서 첫 곡으로 루프)
+      // 마지막 곡이면 멈춤 (원하면 여기서 첫 곡으로 루프 가능)
       return;
     }
 
@@ -205,42 +205,6 @@ async function clearTracksInFirestore() {
 }
 
 // ===== UI 렌더링 =====
-
-// 리스트 아이템에 스와이프 제스처 붙이기
-function attachSwipeToDelete(li) {
-  let startX = 0;
-  let currentX = 0;
-  let isSwiping = false;
-
-  li.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) return;
-    startX = e.touches[0].clientX;
-    currentX = startX;
-    isSwiping = true;
-  });
-
-  li.addEventListener("touchmove", (e) => {
-    if (!isSwiping) return;
-    currentX = e.touches[0].clientX;
-  });
-
-  li.addEventListener("touchend", () => {
-    if (!isSwiping) return;
-    const diffX = currentX - startX;
-
-    if (diffX < -40) {
-      // 왼쪽으로 스와이프 → 삭제 버튼 노출
-      li.classList.add("swiped");
-    } else if (diffX > 40) {
-      // 오른쪽으로 스와이프 → 다시 닫기
-      li.classList.remove("swiped");
-    }
-
-    startX = 0;
-    currentX = 0;
-    isSwiping = false;
-  });
-}
 
 function renderTrackList() {
   trackListEl.innerHTML = "";
@@ -308,7 +272,6 @@ function renderTrackList() {
     trackListEl.appendChild(li);
   });
 }
-
 
 function updateNowPlaying(track) {
   titleEl.textContent = track.title;
@@ -435,7 +398,7 @@ logoutButton.addEventListener("click", async () => {
     await signOut(auth);
   } catch (err) {
     console.error(err);
-    alert("로그아웃 중 문제가 발생했어요.");
+    alert("로그아웃 중 문제가 발생했어요.";
   }
 });
 
