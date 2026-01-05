@@ -17,7 +17,6 @@ body {
   background: #020617;
 }
 
-
 /* 미니 플레이어 */
 .mini-player {
   position: fixed;
@@ -174,7 +173,6 @@ body {
 }
 
 /* 유튜브 iframe을 숨기되, 재생은 유지하기 위한 설정 */
-/* 유튜브 iframe을 완전히 숨기기 (모든 브라우저) */
 .player-container {
   display: none !important;
 }
@@ -186,4 +184,32 @@ body {
   height: 0 !important;
 }
 
+/* ============================= */
+/* 여기부터: 최상단 썸네일 영역  */
+/* ============================= */
 
+/* 상단 커버 전체 영역 레이아웃 */
+.cover-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #111827;
+}
+
+/* 최상단 썸네일 이미지 크기 통일 */
+.cover-large {
+  width: 120px;   /* 여기 숫자만 바꾸면 전체 커버 크기 변경 */
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #111827;
+}
+
+/* 상단 텍스트 영역(제목, 아티스트, 이메일) */
+.cover-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
