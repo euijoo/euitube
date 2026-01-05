@@ -407,6 +407,7 @@ logoutButton.addEventListener("click", async () => {
   }
 });
 
+
 // 로그인 상태 감시
 onAuthStateChanged(auth, async (user) => {
   console.log("auth state changed:", user);
