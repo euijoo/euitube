@@ -1,4 +1,13 @@
-/* 리스트 기본 */
+/* 전체 배경 */
+body {
+  background: #020617;
+  color: #e5e7eb;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* 트랙 리스트 */
 #trackList {
   list-style: none;
   margin: 0;
@@ -12,7 +21,7 @@
   justify-content: space-between;
   padding: 8px 12px;
   gap: 10px;
-  background: #020617;           /* 전체 다크 배경과 맞추기 */
+  background: #020617;
   border-bottom: 1px solid #111827;
 }
 
@@ -74,4 +83,63 @@
 
 .delete-btn:active {
   background: #b91c1c;
+}
+
+/* 미니 플레이어 */
+.mini-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  background: #020617;
+  border-top: 1px solid #111827;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mini-player img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.mini-player-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.mini-player-title {
+  font-size: 13px;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-player-artist {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 미니 플레이어 버튼 */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: #10b981;
+  color: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
 }
