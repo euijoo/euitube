@@ -574,3 +574,42 @@ miniPlayPauseBtn.addEventListener("click", () => {
 document.addEventListener('gesturestart', function (e) {
   e.preventDefault();
 });
+
+
+if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+  // 두 손가락 이상 핀치 시작 막기
+  document.addEventListener(
+    'touchstart',
+    function (e) {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // 핀치 중(scale 변화) 막기
+  document.addEventListener(
+    'touchmove',
+    function (e) {
+      if (e.scale && e.scale !== 1) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // 더블탭 줌 막기
+  let lastTouchEnd = 0;
+  document.addEventListener(
+    'touchend',
+    function (e) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    },
+    { passive: false }
+  );
+}
