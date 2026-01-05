@@ -34,15 +34,15 @@ const db = getFirestore(app);
 // ===== 설정 =====
 
 // YouTube Data API 키
-const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4"; // ← 필요하면 네 키로 변경
+const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4";
 
 // Firestore 컬렉션 경로: users/{uid}/tracks
-let currentUser = null; // { uid, email, ... }
+let currentUser = null;
 
 // ===== 전역 상태 =====
 
 let player = null;
-let tracks = []; // { id(문서ID), videoId, title, channel, thumbnail, addedAt }
+let tracks = []; // { id, videoId, title, channel, thumbnail, addedAt }
 let currentTrackId = null;
 
 // ===== DOM 참조 =====
@@ -107,11 +107,11 @@ async function fetchVideoInfo(videoId) {
   const thumbs = snippet.thumbnails || {};
 
   const bestThumb =
-    thumbs.maxres?.url || // 1280x720
-    thumbs.standard?.url || // 640x480
-    thumbs.high?.url || // 480x360
-    thumbs.medium?.url || // 320x180
-    thumbs.default?.url; // 120x90
+    thumbs.maxres?.url ||
+    thumbs.standard?.url ||
+    thumbs.high?.url ||
+    thumbs.medium?.url ||
+    thumbs.default?.url;
 
   return {
     title: snippet.title,
@@ -123,7 +123,7 @@ async function fetchVideoInfo(videoId) {
 // ===== YouTube Iframe API 콜백 =====
 
 function onYouTubeIframeAPIReady() {
-  // 최초에는 아무것도 하지 않음 (playVideoById에서 player 생성)
+  // 최초에는 아무것도 하지 않음
 }
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
@@ -132,9 +132,8 @@ function onPlayerReady() {
   miniPlayPauseBtn.textContent = "▶";
 }
 
-// 재생 상태 변경될 때(재생 시작, 일시정지, 끝남 등)
+// 재생 상태 변경 (다음 곡 자동재생)
 function onPlayerStateChange(event) {
-  // 곡이 끝났을 때
   if (event.data === YT.PlayerState.ENDED) {
     if (!currentTrackId || tracks.length === 0) return;
 
@@ -142,15 +141,9 @@ function onPlayerStateChange(event) {
     if (currentIndex === -1) return;
 
     const nextIndex = currentIndex + 1;
-
-    // 마지막 곡이면 그냥 멈춤
     if (nextIndex >= tracks.length) {
+      // 마지막 곡이면 멈춤 (원하면 여기서 첫 곡으로 루프)
       return;
-
-      // 만약 마지막 곡 뒤에 첫 곡으로 돌아가고 싶으면 위 return 지우고 아래 사용:
-      // const firstTrack = tracks[0];
-      // playTrack(firstTrack.id);
-      // return;
     }
 
     const nextTrack = tracks[nextIndex];
@@ -164,7 +157,6 @@ function getTracksCollectionRef(uid) {
   return collection(db, "users", uid, "tracks");
 }
 
-// Firestore에서 트랙 전체 불러오기
 async function loadTracksFromFirestore() {
   if (!currentUser) return;
 
@@ -183,31 +175,24 @@ async function loadTracksFromFirestore() {
     });
   });
 
-  // 최신순 정렬
   tracks = list.sort((a, b) => b.addedAt - a.addedAt);
 }
 
-// Firestore에 새 트랙 추가
 async function addTrackToFirestore(track) {
   if (!currentUser) return;
-
   const colRef = getTracksCollectionRef(currentUser.uid);
   const docRef = await addDoc(colRef, track);
   return docRef.id;
 }
 
-// Firestore에서 특정 트랙 삭제
 async function deleteTrackFromFirestore(id) {
   if (!currentUser) return;
-
   const docRef = doc(db, "users", currentUser.uid, "tracks", id);
   await deleteDoc(docRef);
 }
 
-// Firestore에서 전체 트랙 삭제 (clear all)
 async function clearTracksInFirestore() {
   if (!currentUser) return;
-
   const colRef = getTracksCollectionRef(currentUser.uid);
   const snap = await getDocs(colRef);
   const promises = [];
@@ -220,6 +205,42 @@ async function clearTracksInFirestore() {
 }
 
 // ===== UI 렌더링 =====
+
+// 리스트 아이템에 스와이프 제스처 붙이기
+function attachSwipeToDelete(li) {
+  let startX = 0;
+  let currentX = 0;
+  let isSwiping = false;
+
+  li.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    currentX = startX;
+    isSwiping = true;
+  });
+
+  li.addEventListener("touchmove", (e) => {
+    if (!isSwiping) return;
+    currentX = e.touches[0].clientX;
+  });
+
+  li.addEventListener("touchend", () => {
+    if (!isSwiping) return;
+    const diffX = currentX - startX;
+
+    if (diffX < -40) {
+      // 왼쪽으로 스와이프 → 삭제 버튼 노출
+      li.classList.add("swiped");
+    } else if (diffX > 40) {
+      // 오른쪽으로 스와이프 → 다시 닫기
+      li.classList.remove("swiped");
+    }
+
+    startX = 0;
+    currentX = 0;
+    isSwiping = false;
+  });
+}
 
 function renderTrackList() {
   trackListEl.innerHTML = "";
@@ -242,6 +263,10 @@ function renderTrackList() {
       li.classList.add("active");
     }
 
+    // 안쪽 컨텐츠 (스와이프되는 영역)
+    const inner = document.createElement("div");
+    inner.className = "track-item-inner";
+
     const img = document.createElement("img");
     img.className = "track-item-thumb";
     img.src = track.thumbnail;
@@ -261,28 +286,15 @@ function renderTrackList() {
     textBox.appendChild(titleDiv);
     textBox.appendChild(artistDiv);
 
-    const metaDiv = document.createElement("div");
-    metaDiv.className = "track-item-meta";
-    metaDiv.textContent = new Date(track.addedAt).toLocaleTimeString(
-      "ko-KR",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
+    inner.appendChild(img);
+    inner.appendChild(textBox);
 
+    // 삭제 버튼 (오른쪽 고정 영역)
     const delBtn = document.createElement("button");
-    delBtn.className = "delete-btn";
+    delBtn.className = "track-item-delete";
     delBtn.textContent = "삭제";
 
-    metaDiv.appendChild(delBtn);
-
-    li.appendChild(img);
-    li.appendChild(textBox);
-    li.appendChild(metaDiv);
-
-    li.addEventListener("click", (e) => {
-      if (e.target === delBtn) return;
+    inner.addEventListener("click", () => {
       playTrack(track.id);
     });
 
@@ -291,7 +303,11 @@ function renderTrackList() {
       await deleteTrack(track.id);
     });
 
+    li.appendChild(inner);
+    li.appendChild(delBtn);
     trackListEl.appendChild(li);
+
+    attachSwipeToDelete(li);
   });
 }
 
@@ -300,7 +316,6 @@ function updateNowPlaying(track) {
   artistEl.textContent = track.channel;
   thumbnailEl.src = track.thumbnail;
 
-  // 미니 플레이어도 같이 업데이트
   const miniThumb = document.getElementById("miniThumb");
   const miniTitle = document.getElementById("miniTitle");
   const miniArtist = document.getElementById("miniArtist");
@@ -336,7 +351,6 @@ async function addTrackFromUrl(url) {
       addedAt: Date.now(),
     };
 
-    // Firestore에 먼저 저장
     const docId = await addTrackToFirestore(newTrackData);
 
     const newTrack = {
@@ -396,7 +410,7 @@ function playVideoById(videoId) {
       },
       events: {
         onReady: onPlayerReady,
-        onStateChange: onPlayerStateChange, // ← 자동 다음 곡 재생용
+        onStateChange: onPlayerStateChange,
       },
     });
   } else {
@@ -410,7 +424,6 @@ googleLoginButton.addEventListener("click", async () => {
   try {
     loginError.textContent = "";
     await signInWithPopup(auth, provider);
-    // onAuthStateChanged가 자동으로 호출됨
   } catch (err) {
     console.error(err);
     loginError.textContent =
@@ -421,7 +434,6 @@ googleLoginButton.addEventListener("click", async () => {
 logoutButton.addEventListener("click", async () => {
   try {
     await signOut(auth);
-    // onAuthStateChanged에서 화면 정리
   } catch (err) {
     console.error(err);
     alert("로그아웃 중 문제가 발생했어요.");
@@ -431,18 +443,15 @@ logoutButton.addEventListener("click", async () => {
 // 로그인 상태 감시
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // 로그인됨
     currentUser = user;
     userEmailEl.textContent = user.email || "";
 
     loginScreen.style.display = "none";
     mainScreen.classList.remove("hidden");
 
-    // Firestore에서 트랙 불러오기
     await loadTracksFromFirestore();
     renderTrackList();
 
-    // 기존 트랙이 있으면 첫 곡으로 표시
     if (tracks.length > 0) {
       const first = tracks[0];
       currentTrackId = first.id;
@@ -453,7 +462,6 @@ onAuthStateChanged(auth, async (user) => {
       thumbnailEl.removeAttribute("src");
     }
   } else {
-    // 로그아웃됨
     currentUser = null;
     tracks = [];
     currentTrackId = null;
