@@ -1,174 +1,100 @@
 html,
 body {
-  height: 100%;
-  margin: 0;
+height: 100%;
+margin: 0;
 }
 
 body {
-  background: #020617;
-  color: #e5e7eb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+background: #020617;
+color: #e5e7eb;
+font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+sans-serif;
 }
 
 /* 최상위 .app도 배경을 어둡게 */
 .app {
-  min-height: 100vh;
-  background: #020617;
+min-height: 100vh;
+background: #020617;
 }
 
-/* 폰 화면 폭(상단 커버 + 리스트 기준) */
-.phone-shell {
-  max-width: 480px;
-  margin: 0 auto;
-  padding-bottom: 72px; /* 미니플레이어 높이만큼 여백 */
-  box-sizing: border-box;
-}
 
-/* ======================= */
-/* 상단 커버(썸네일) 부분  */
-/* ======================= */
-
-/* 상단 커버 섹션: 썸네일 + 텍스트 */
-.cover-section {
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #111827;
-}
-
-/* 상단 썸네일: 여기만 120x120 고정 */
-#thumbnail {
-  flex: 0 0 auto;
-  display: block;
-  width: 120px;
-  height: 120px;
-  border-radius: 12px;
-  object-fit: cover;
-  background: #111827;
-}
-
-/* 상단 텍스트 영역 */
-.cover-text {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.track-title-lg {
-  font-size: 16px;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.track-artist-lg {
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-email {
-  font-size: 11px;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* ======================= */
-/* 미니 플레이어           */
-/* ======================= */
-
+/* 미니 플레이어 */
 .mini-player {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 12px;
-  background: #020617;
-  border-top: 1px solid #111827;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+padding: 8px 12px;
+background: #020617;
+border-top: 1px solid #111827;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
 }
 
 /* 왼쪽 영역 */
 .mini-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
+display: flex;
+align-items: center;
+gap: 10px;
+flex: 1;
+min-width: 0;
 }
 
 /* 커버 이미지 */
 .mini-cover {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  object-fit: cover;
+width: 40px;
+height: 40px;
+border-radius: 6px;
+object-fit: cover;
 }
 
 /* 텍스트 박스 */
 .mini-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+display: flex;
+flex-direction: column;
+min-width: 0;
 }
 
 .mini-title {
-  font-size: 13px;
-  color: #e5e7eb;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+font-size: 13px;
+color: #e5e7eb;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 
 .mini-artist {
-  font-size: 11px;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+font-size: 11px;
+color: #9ca3af;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 
 /* 오른쪽 버튼 영역 */
 .mini-right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+display: flex;
+align-items: center;
+justify-content: flex-end;
 }
 
 /* 미니 플레이어 버튼 (id로 스타일링) */
 #miniPlayPauseBtn {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: none;
-  background: #10b981;
-  color: #020617;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
+width: 40px;
+height: 40px;
+border-radius: 999px;
+border: none;
+background: #10b981;
+color: #020617;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+font-size: 18px;
 }
-
-/* ======================= */
-/* 트랙 리스트             */
-/* ======================= */
-
+/* 트랙 리스트 */
 #trackList {
   list-style: none;
   margin: 0;
@@ -191,7 +117,7 @@ body {
   background: #111827;
 }
 
-/* 썸네일 (리스트) */
+/* 썸네일 */
 .track-item-thumb {
   width: 40px;
   height: 40px;
@@ -245,12 +171,84 @@ body {
 .delete-btn:active {
   background: #b91c1c;
 }
+/* 트랙 리스트 */
+#trackList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 
-/* ======================= */
-/* 유튜브 iframe 숨기기    */
-/* ======================= */
+/* 각 아이템 */
+.track-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 10px;
+  background: #020617;
+  border-bottom: 1px solid #111827;
+}
 
-/* 유튜브 iframe을 완전히 숨기기 (오디오만 사용) */
+/* 현재 재생 중인 아이템 강조 */
+.track-item.active {
+  background: #111827;
+}
+
+/* 썸네일 */
+.track-item-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* 텍스트 영역 */
+.track-item-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.track-item-title {
+  font-size: 14px;
+  color: #e5e7eb;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-item-artist {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 오른쪽 삭제 버튼 래퍼 */
+.track-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* 삭제 버튼 */
+.delete-btn {
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #ef4444;
+  color: #f9fafb;
+  cursor: pointer;
+}
+
+.delete-btn:active {
+  background: #b91c1c;
+}
+/* 유튜브 iframe을 완전히 숨기기 (모든 브라우저) */
 .player-container {
   display: none !important;
 }
