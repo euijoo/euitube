@@ -570,3 +570,7 @@ miniPlayPauseBtn.addEventListener("click", () => {
 
   updateMiniButtonByPlayerState();
 });
+
+document.addEventListener('gesturestart', function (e) {
+  e.preventDefault();
+});
