@@ -473,7 +473,7 @@ clearListButton.addEventListener("click", async () => {
 });
 
 // ===== 미니 플레이어 재생/일시정지 버튼 =====
-
+console.log("miniPlayPauseBtn:", miniPlayPauseBtn);
 miniPlayPauseBtn.addEventListener("click", () => {
   if (!player) return;
 
