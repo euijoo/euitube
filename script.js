@@ -120,6 +120,19 @@ async function fetchVideoInfo(videoId) {
   };
 }
 
+// ===== 미니 플레이어 아이콘 동기화 함수 =====
+
+function updateMiniButtonByPlayerState() {
+  if (!player || !miniPlayPauseBtn) return;
+
+  const state = player.getPlayerState();
+  if (state === YT.PlayerState.PLAYING) {
+    miniPlayPauseBtn.textContent = "⏸";
+  } else {
+    miniPlayPauseBtn.textContent = "▶";
+  }
+}
+
 // ===== YouTube Iframe API 콜백 =====
 
 function onYouTubeIframeAPIReady() {
@@ -127,14 +140,35 @@ function onYouTubeIframeAPIReady() {
 }
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
-// 플레이어 준비됐을 때: 미니 버튼 아이콘 초기화
+// 플레이어 준비됐을 때: 미니 버튼 아이콘 초기화 + Media Session 메타 설정
 function onPlayerReady() {
   miniPlayPauseBtn.textContent = "▶";
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.playbackState = "none";
+  }
 }
 
-// 재생 상태 변경 (다음 곡 자동재생)
+// 재생 상태 변경 (다음 곡 자동재생 + MediaSession/아이콘 동기화)
 function onPlayerStateChange(event) {
-  if (event.data === YT.PlayerState.ENDED) {
+  const state = event.data;
+
+  // 미니 플레이어 아이콘을 현재 상태에 맞게 갱신
+  updateMiniButtonByPlayerState();
+
+  // Media Session API 쪽 재생 상태 동기화
+  if ("mediaSession" in navigator) {
+    if (state === YT.PlayerState.PLAYING) {
+      navigator.mediaSession.playbackState = "playing";
+    } else if (state === YT.PlayerState.PAUSED) {
+      navigator.mediaSession.playbackState = "paused";
+    } else if (state === YT.PlayerState.ENDED) {
+      navigator.mediaSession.playbackState = "none";
+    }
+  }
+
+  // === 다음 곡 자동재생 기존 로직 ===
+  if (state === YT.PlayerState.ENDED) {
     if (!currentTrackId || tracks.length === 0) return;
 
     const currentIndex = tracks.findIndex((t) => t.id === currentTrackId);
@@ -286,6 +320,18 @@ function updateNowPlaying(track) {
     miniTitle.textContent = track.title;
     miniArtist.textContent = track.channel;
   }
+
+  // Media Session 메타데이터도 같이 갱신
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.channel,
+      artwork: [
+        { src: track.thumbnail, sizes: "96x96", type: "image/jpeg" },
+        { src: track.thumbnail, sizes: "256x256", type: "image/jpeg" },
+      ],
+    });
+  }
 }
 
 // ===== 트랙 추가/삭제/재생 =====
@@ -375,6 +421,21 @@ function playVideoById(videoId) {
         onStateChange: onPlayerStateChange,
       },
     });
+
+    // Media Session API 액션 핸들러 등록 (블루투스/시스템 재생 제어)
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", () => {
+        if (!player) return;
+        player.playVideo();
+        updateMiniButtonByPlayerState();
+      });
+
+      navigator.mediaSession.setActionHandler("pause", () => {
+        if (!player) return;
+        player.pauseVideo();
+        updateMiniButtonByPlayerState();
+      });
+    }
   } else {
     player.loadVideoById(videoId);
   }
@@ -406,7 +467,6 @@ logoutButton.addEventListener("click", async () => {
     alert("로그아웃 중 문제가 발생했어요.");
   }
 });
-
 
 // 로그인 상태 감시
 onAuthStateChanged(auth, async (user) => {
@@ -473,7 +533,9 @@ clearListButton.addEventListener("click", async () => {
 });
 
 // ===== 미니 플레이어 재생/일시정지 버튼 =====
+
 console.log("miniPlayPauseBtn:", miniPlayPauseBtn);
+
 miniPlayPauseBtn.addEventListener("click", () => {
   if (!player) return;
 
@@ -481,9 +543,9 @@ miniPlayPauseBtn.addEventListener("click", () => {
 
   if (state === YT.PlayerState.PLAYING) {
     player.pauseVideo();
-    miniPlayPauseBtn.textContent = "▶";
   } else {
     player.playVideo();
-    miniPlayPauseBtn.textContent = "⏸";
   }
+
+  updateMiniButtonByPlayerState();
 });
