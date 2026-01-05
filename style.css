@@ -32,14 +32,10 @@ body {
 
 /* 최상단 썸네일 이미지 크기 통제 */
 .cover-large {
-  /* 기본 가로 크기: 화면 폭의 35% 정도 */
-  width: 35vw;
-  /* 하지만 너무 커지지 않도록 최대값 제한 (예: 140px) */
-  max-width: 140px;
-  /* 세로는 가로에 맞추되, 최대 높이도 제한 */
+  width: 35vw;      /* 화면 가로의 35% */
+  max-width: 140px; /* 최대 140px 이상은 안 커짐 */
   height: auto;
   max-height: 140px;
-
   border-radius: 12px;
   object-fit: cover;
   background: #111827;
