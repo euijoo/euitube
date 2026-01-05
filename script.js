@@ -423,7 +423,7 @@ function playVideoById(videoId) {
     });
 
     // Media Session API 액션 핸들러 등록 (블루투스/시스템 재생 제어)
-    if ("mediaSession" in navigator) {
+        if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => {
         if (!player) return;
         player.playVideo();
@@ -435,7 +435,28 @@ function playVideoById(videoId) {
         player.pauseVideo();
         updateMiniButtonByPlayerState();
       });
+
+      navigator.mediaSession.setActionHandler("nexttrack", () => {
+        if (!currentTrackId || tracks.length === 0) return;
+        const currentIndex = tracks.findIndex((t) => t.id === currentTrackId);
+        if (currentIndex === -1) return;
+        const nextIndex = currentIndex + 1;
+        if (nextIndex >= tracks.length) return;
+        const nextTrack = tracks[nextIndex];
+        playTrack(nextTrack.id);
+      });
+
+      navigator.mediaSession.setActionHandler("previoustrack", () => {
+        if (!currentTrackId || tracks.length === 0) return;
+        const currentIndex = tracks.findIndex((t) => t.id === currentTrackId);
+        if (currentIndex === -1) return;
+        const prevIndex = currentIndex - 1;
+        if (prevIndex < 0) return;
+        const prevTrack = tracks[prevIndex];
+        playTrack(prevTrack.id);
+      });
     }
+
   } else {
     player.loadVideoById(videoId);
   }
