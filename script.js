@@ -387,11 +387,17 @@ googleLoginButton.addEventListener("click", async () => {
     loginError.textContent = "";
     await signInWithPopup(auth, provider);
   } catch (err) {
-    console.error(err);
-    loginError.textContent =
-      "로그인 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+    console.error(err.code, err.message);
+    if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
+      loginError.textContent =
+        "팝업이 차단되었어요. 브라우저 팝업/쿠키 설정을 확인해 주세요.";
+    } else {
+      loginError.textContent =
+        `로그인 오류 (${err.code}) 잠시 후 다시 시도해 주세요.`;
+    }
   }
 });
+
 
 logoutButton.addEventListener("click", async () => {
   try {
