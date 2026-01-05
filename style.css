@@ -174,19 +174,16 @@ body {
 }
 
 /* 유튜브 iframe을 숨기되, 재생은 유지하기 위한 설정 */
+/* 유튜브 iframe을 완전히 숨기기 (모든 브라우저) */
 .player-container {
-  position: fixed;
-  bottom: 100vh;      /* 화면 바깥으로 밀기 */
-  left: 0;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;         /* 완전 투명 */
-  pointer-events: none;
+  display: none !important;
 }
 
+#player,
 .player-frame {
-  width: 1px;
-  height: 1px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
+
 
