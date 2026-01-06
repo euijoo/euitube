@@ -34,31 +34,23 @@ const db = getFirestore(app);
 
 // ===== 설정 =====
 
-// YouTube Data API 키
 const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4";
 
-// Firestore 컬렉션 경로: users/{uid}/tracks
 let currentUser = null;
-
-// ===== 전역 상태 =====
-
 let player = null;
-// tracks: { id, videoId, title, channel, thumbnail, customThumbnail?, addedAt }
+// { id, videoId, title, channel, thumbnail, customThumbnail?, addedAt }
 let tracks = [];
 let currentTrackId = null;
 
-// 빠른 연속 클릭 방지용 락 (Safari 크래시 완화용)
 let playClickLock = false;
 
 // ===== DOM 참조 =====
 const miniPlayPauseBtn = document.getElementById("miniPlayPauseBtn");
 
-// 로그인 화면
 const loginScreen = document.getElementById("login-screen");
 const googleLoginButton = document.getElementById("googleLoginButton");
 const loginError = document.getElementById("loginError");
 
-// 메인 화면
 const mainScreen = document.getElementById("main-screen");
 const logoutButton = document.getElementById("logoutButton");
 const userEmailEl = document.getElementById("userEmail");
@@ -72,6 +64,12 @@ const titleEl = document.getElementById("title");
 const artistEl = document.getElementById("artist");
 const thumbnailEl = document.getElementById("thumbnail");
 const changeCoverBtn = document.getElementById("changeCoverBtn");
+
+// 커버 바텀 시트 요소 (JS에서 생성)
+let coverSheetBackdrop = null;
+let coverSheetInput = null;
+let coverSheetSaveBtn = null;
+let coverSheetCancelBtn = null;
 
 // ===== 유틸: videoId / playlistId 추출 =====
 
@@ -101,7 +99,7 @@ function extractPlaylistId(url) {
   }
 }
 
-// ===== Data API: 영상 / 플레이리스트 정보 가져오기 =====
+// ===== Data API =====
 
 async function fetchVideoInfo(videoId) {
   const endpoint = "https://www.googleapis.com/youtube/v3/videos";
@@ -136,7 +134,6 @@ async function fetchVideoInfo(videoId) {
   };
 }
 
-// playlistId로 안의 videoId 목록 가져오기 (최대 50개 정도만)
 async function fetchPlaylistItems(playlistId, maxTotal = 50) {
   const endpoint = "https://www.googleapis.com/youtube/v3/playlistItems";
   let pageToken = "";
@@ -169,7 +166,7 @@ async function fetchPlaylistItems(playlistId, maxTotal = 50) {
   return videoIds;
 }
 
-// ===== 미니 플레이어 아이콘 동기화 함수 =====
+// ===== 플레이어 상태 =====
 
 function updateMiniButtonByPlayerState() {
   if (!player || !miniPlayPauseBtn || !window.YT) return;
@@ -182,23 +179,16 @@ function updateMiniButtonByPlayerState() {
   }
 }
 
-// ===== YouTube Iframe API 콜백 =====
-
-function onYouTubeIframeAPIReady() {
-  // 최초에는 아무것도 하지 않음 (playVideoById에서 player 생성)
-}
+function onYouTubeIframeAPIReady() {}
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
-// 플레이어 준비됐을 때: 미니 버튼 아이콘 초기화 + Media Session 메타 설정
 function onPlayerReady() {
   miniPlayPauseBtn.textContent = "▶";
-
   if ("mediaSession" in navigator) {
     navigator.mediaSession.playbackState = "none";
   }
 }
 
-// 재생 상태 변경 (다음 곡 자동재생 + MediaSession/아이콘 동기화)
 function onPlayerStateChange(event) {
   if (!window.YT) return;
   const state = event.data;
@@ -217,21 +207,16 @@ function onPlayerStateChange(event) {
 
   if (state === YT.PlayerState.ENDED) {
     if (!currentTrackId || tracks.length === 0) return;
-
     const currentIndex = tracks.findIndex((t) => t.id === currentTrackId);
     if (currentIndex === -1) return;
-
     const nextIndex = currentIndex + 1;
-    if (nextIndex >= tracks.length) {
-      return;
-    }
-
+    if (nextIndex >= tracks.length) return;
     const nextTrack = tracks[nextIndex];
     playTrack(nextTrack.id);
   }
 }
 
-// ===== Firestore: 유저별 tracks 컬렉션 참조 =====
+// ===== Firestore =====
 
 function getTracksCollectionRef(uid) {
   return collection(db, "users", uid, "tracks");
@@ -285,14 +270,12 @@ async function clearTracksInFirestore() {
   await Promise.all(promises);
 }
 
-// 제목 수정 저장용
 async function updateTrackTitleInFirestore(id, newTitle) {
   if (!currentUser) return;
   const trackRef = doc(db, "users", currentUser.uid, "tracks", id);
   await updateDoc(trackRef, { title: newTitle });
 }
 
-// 커버 이미지(썸네일) 수정 저장용
 async function updateTrackCustomThumbnailInFirestore(id, url) {
   if (!currentUser) return;
   const trackRef = doc(db, "users", currentUser.uid, "tracks", id);
@@ -514,11 +497,7 @@ async function addTrackFromUrl(url) {
     };
 
     const docId = await addTrackToFirestore(newTrackData);
-
-    const newTrack = {
-      id: docId,
-      ...newTrackData,
-    };
+    const newTrack = { id: docId, ...newTrackData };
 
     tracks.unshift(newTrack);
     currentTrackId = newTrack.id;
@@ -531,7 +510,6 @@ async function addTrackFromUrl(url) {
   }
 }
 
-// 플레이리스트 URL/영상 URL 모두 처리
 async function addFromInputUrl(url) {
   if (!currentUser) {
     alert("먼저 Google 계정으로 로그인해 주세요.");
@@ -764,10 +742,79 @@ clearListButton.addEventListener("click", async () => {
   resetNowPlayingUI();
 });
 
-// ===== 상단 커버 변경 버튼 (⋯) =====
+// ===== 상단 커버 변경용 바텀 시트 =====
+
+function ensureCoverSheet() {
+  if (coverSheetBackdrop) return;
+
+  coverSheetBackdrop = document.createElement("div");
+  coverSheetBackdrop.className = "cover-sheet-backdrop";
+
+  const sheet = document.createElement("div");
+  sheet.className = "cover-sheet";
+
+  const title = document.createElement("p");
+  title.className = "cover-sheet-title";
+  title.textContent = "커버 이미지 링크 변경";
+
+  const desc = document.createElement("p");
+  desc.className = "cover-sheet-desc";
+  desc.textContent =
+    "이미지 주소를 직접 넣어서 커버를 바꿀 수 있어요. 비워서 저장하면 원래 썸네일로 돌아갑니다.";
+
+  coverSheetInput = document.createElement("input");
+  coverSheetInput.type = "text";
+  coverSheetInput.className = "cover-sheet-input";
+  coverSheetInput.placeholder = "https://example.com/cover.jpg";
+
+  const actions = document.createElement("div");
+  actions.className = "cover-sheet-actions";
+
+  coverSheetCancelBtn = document.createElement("button");
+  coverSheetCancelBtn.className = "cover-sheet-btn cancel";
+  coverSheetCancelBtn.textContent = "취소";
+
+  coverSheetSaveBtn = document.createElement("button");
+  coverSheetSaveBtn.className = "cover-sheet-btn save";
+  coverSheetSaveBtn.textContent = "저장";
+
+  actions.appendChild(coverSheetCancelBtn);
+  actions.appendChild(coverSheetSaveBtn);
+
+  sheet.appendChild(title);
+  sheet.appendChild(desc);
+  sheet.appendChild(coverSheetInput);
+  sheet.appendChild(actions);
+
+  coverSheetBackdrop.appendChild(sheet);
+  document.body.appendChild(coverSheetBackdrop);
+
+  coverSheetCancelBtn.addEventListener("click", () => {
+    hideCoverSheet();
+  });
+
+  coverSheetBackdrop.addEventListener("click", (e) => {
+    if (e.target === coverSheetBackdrop) {
+      hideCoverSheet();
+    }
+  });
+}
+
+function showCoverSheet(currentUrl) {
+  ensureCoverSheet();
+  coverSheetInput.value = currentUrl || "";
+  coverSheetBackdrop.classList.add("show");
+  coverSheetInput.focus();
+  coverSheetInput.select();
+}
+
+function hideCoverSheet() {
+  if (!coverSheetBackdrop) return;
+  coverSheetBackdrop.classList.remove("show");
+}
 
 if (changeCoverBtn) {
-  changeCoverBtn.addEventListener("click", async () => {
+  changeCoverBtn.addEventListener("click", () => {
     if (!currentTrackId) {
       alert("먼저 재생할 곡을 선택해 주세요.");
       return;
@@ -776,30 +823,45 @@ if (changeCoverBtn) {
     if (!track) return;
 
     const currentUrl = track.customThumbnail || track.thumbnail || "";
-    const url = prompt(
-      "새 커버 이미지 주소를 입력하세요.\n(빈 값으로 저장하면 원래 썸네일로 돌아갑니다.)",
-      currentUrl
-    );
-    if (url === null) return; // 취소
+    showCoverSheet(currentUrl);
 
-    const trimmed = url.trim();
-    const newCustom = trimmed || null;
+    const handleSave = async () => {
+      const trimmed = coverSheetInput.value.trim();
+      const newCustom = trimmed || null;
 
-    try {
-      await updateTrackCustomThumbnailInFirestore(track.id, newCustom);
-      track.customThumbnail = newCustom;
-      updateNowPlaying(track);
-      renderTrackList();
-    } catch (err) {
-      console.error("커버 이미지 업데이트 실패:", err);
-      alert("커버 이미지를 저장하는 중 오류가 발생했어요.");
-    }
+      try {
+        await updateTrackCustomThumbnailInFirestore(track.id, newCustom);
+        track.customThumbnail = newCustom;
+        updateNowPlaying(track);
+        renderTrackList();
+      } catch (err) {
+        console.error("커버 이미지 업데이트 실패:", err);
+        alert("커버 이미지를 저장하는 중 오류가 발생했어요.");
+      } finally {
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
+      }
+    };
+
+    coverSheetSaveBtn.addEventListener("click", handleSave);
+    coverSheetInput.addEventListener("keydown", handleKeydown);
   });
 }
 
 // ===== 미니 플레이어 재생/일시정지 버튼 =====
-
-console.log("miniPlayPauseBtn:", miniPlayPauseBtn);
 
 miniPlayPauseBtn.addEventListener("click", () => {
   if (!player || !window.YT) return;
