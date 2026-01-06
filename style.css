@@ -54,6 +54,9 @@ body {
   border-radius: 16px;
   object-fit: cover;
   margin: 0 auto;
+
+  /* 하얀 1px 라인 줄이기용 */
+  transform: scale(1.01);
 }
 
 /* 커버 변경 버튼 (⋯, 살짝 숨겨진 느낌) */
@@ -171,6 +174,7 @@ body {
   height: 40px;
   border-radius: 6px;
   object-fit: cover;
+  transform: scale(1.01);
 }
 
 /* 텍스트 영역 */
