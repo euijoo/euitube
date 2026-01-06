@@ -45,6 +45,9 @@ let player = null;
 let tracks = []; // { id, videoId, title, channel, thumbnail, addedAt }
 let currentTrackId = null;
 
+// 빠른 연속 클릭 방지용 락 (Safari 크래시 완화용)
+let playClickLock = false;
+
 // ===== DOM 참조 =====
 const miniPlayPauseBtn = document.getElementById("miniPlayPauseBtn");
 
@@ -123,7 +126,7 @@ async function fetchVideoInfo(videoId) {
 // ===== 미니 플레이어 아이콘 동기화 함수 =====
 
 function updateMiniButtonByPlayerState() {
-  if (!player || !miniPlayPauseBtn) return;
+  if (!player || !miniPlayPauseBtn || !window.YT) return;
 
   const state = player.getPlayerState();
   if (state === YT.PlayerState.PLAYING) {
@@ -151,6 +154,7 @@ function onPlayerReady() {
 
 // 재생 상태 변경 (다음 곡 자동재생 + MediaSession/아이콘 동기화)
 function onPlayerStateChange(event) {
+  if (!window.YT) return;
   const state = event.data;
 
   // 미니 플레이어 아이콘을 현재 상태에 맞게 갱신
@@ -167,7 +171,7 @@ function onPlayerStateChange(event) {
     }
   }
 
-  // === 다음 곡 자동재생 기존 로직 ===
+  // === 다음 곡 자동재생 ===
   if (state === YT.PlayerState.ENDED) {
     if (!currentTrackId || tracks.length === 0) return;
 
@@ -295,6 +299,13 @@ function renderTrackList() {
 
     li.addEventListener("click", (e) => {
       if (e.target === delBtn) return;
+      // 연속 탭으로 인한 Safari 크래시 방지용 락
+      if (playClickLock) return;
+      playClickLock = true;
+      setTimeout(() => {
+        playClickLock = false;
+      }, 400);
+
       playTrack(track.id);
     });
 
@@ -305,6 +316,26 @@ function renderTrackList() {
 
     trackListEl.appendChild(li);
   });
+}
+
+function resetNowPlayingUI() {
+  titleEl.textContent = "제목";
+  artistEl.textContent = "아티스트";
+  thumbnailEl.removeAttribute("src");
+
+  const miniThumb = document.getElementById("miniThumb");
+  const miniTitle = document.getElementById("miniTitle");
+  const miniArtist = document.getElementById("miniArtist");
+  if (miniThumb && miniTitle && miniArtist) {
+    miniThumb.removeAttribute("src");
+    miniTitle.textContent = "제목";
+    miniArtist.textContent = "아티스트";
+  }
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = null;
+    navigator.mediaSession.playbackState = "none";
+  }
 }
 
 function updateNowPlaying(track) {
@@ -390,6 +421,8 @@ async function deleteTrack(id) {
     if (currentTrackId) {
       updateNowPlaying(tracks[0]);
       playVideoById(tracks[0].videoId);
+    } else {
+      resetNowPlayingUI();
     }
   }
 
@@ -423,7 +456,7 @@ function playVideoById(videoId) {
     });
 
     // Media Session API 액션 핸들러 등록 (블루투스/시스템 재생 제어)
-        if ("mediaSession" in navigator) {
+    if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => {
         if (!player) return;
         player.playVideo();
@@ -456,7 +489,6 @@ function playVideoById(videoId) {
         playTrack(prevTrack.id);
       });
     }
-
   } else {
     player.loadVideoById(videoId);
   }
@@ -470,12 +502,14 @@ googleLoginButton.addEventListener("click", async () => {
     await signInWithPopup(auth, provider);
   } catch (err) {
     console.error("login error:", err.code, err.message);
-    if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
+    if (
+      err.code === "auth/popup-blocked" ||
+      err.code === "auth/popup-closed-by-user"
+    ) {
       loginError.textContent =
         "팝업이 차단되었어요. 브라우저 팝업/쿠키 설정을 확인해 주세요.";
     } else {
-      loginError.textContent =
-        `로그인 오류 (${err.code}) 잠시 후 다시 시도해 주세요.`;
+      loginError.textContent = `로그인 오류 (${err.code}) 잠시 후 다시 시도해 주세요.`;
     }
   }
 });
@@ -483,16 +517,20 @@ googleLoginButton.addEventListener("click", async () => {
 logoutButton.addEventListener("click", async () => {
   try {
     await signOut(auth);
+    // 여기서 UI는 굳이 건드리지 않고, onAuthStateChanged에서 일괄 처리
   } catch (err) {
     console.error(err);
     alert("로그아웃 중 문제가 발생했어요.");
   }
 });
 
-// 로그인 상태 감시
+// ===== 로그인 상태 감시 =====
+
 onAuthStateChanged(auth, async (user) => {
   console.log("auth state changed:", user);
+
   if (user) {
+    // 로그인 상태
     currentUser = user;
     userEmailEl.textContent = user.email || "";
 
@@ -507,15 +545,18 @@ onAuthStateChanged(auth, async (user) => {
       currentTrackId = first.id;
       updateNowPlaying(first);
     } else {
-      titleEl.textContent = "제목";
-      artistEl.textContent = "아티스트";
-      thumbnailEl.removeAttribute("src");
+      resetNowPlayingUI();
     }
   } else {
+    // 로그아웃 상태
     currentUser = null;
     tracks = [];
     currentTrackId = null;
 
+    // 재생 중이던 것 정리
+    resetNowPlayingUI();
+
+    // 로그인 화면 표시, 메인 숨기기
     loginScreen.style.display = "flex";
     mainScreen.classList.add("hidden");
     loginError.textContent = "";
@@ -548,9 +589,7 @@ clearListButton.addEventListener("click", async () => {
   tracks = [];
   currentTrackId = null;
   renderTrackList();
-  titleEl.textContent = "제목";
-  artistEl.textContent = "아티스트";
-  thumbnailEl.removeAttribute("src");
+  resetNowPlayingUI();
 });
 
 // ===== 미니 플레이어 재생/일시정지 버튼 =====
@@ -558,7 +597,7 @@ clearListButton.addEventListener("click", async () => {
 console.log("miniPlayPauseBtn:", miniPlayPauseBtn);
 
 miniPlayPauseBtn.addEventListener("click", () => {
-  if (!player) return;
+  if (!player || !window.YT) return;
 
   const state = player.getPlayerState();
 
@@ -571,15 +610,16 @@ miniPlayPauseBtn.addEventListener("click", () => {
   updateMiniButtonByPlayerState();
 });
 
-document.addEventListener('gesturestart', function (e) {
+// ===== iOS 확대 방지 =====
+
+document.addEventListener("gesturestart", function (e) {
   e.preventDefault();
 });
-
 
 if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
   // 두 손가락 이상 핀치 시작 막기
   document.addEventListener(
-    'touchstart',
+    "touchstart",
     function (e) {
       if (e.touches.length > 1) {
         e.preventDefault();
@@ -590,7 +630,7 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
 
   // 핀치 중(scale 변화) 막기
   document.addEventListener(
-    'touchmove',
+    "touchmove",
     function (e) {
       if (e.scale && e.scale !== 1) {
         e.preventDefault();
@@ -602,7 +642,7 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
   // 더블탭 줌 막기
   let lastTouchEnd = 0;
   document.addEventListener(
-    'touchend',
+    "touchend",
     function (e) {
       const now = Date.now();
       if (now - lastTouchEnd <= 300) {
