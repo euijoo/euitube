@@ -503,7 +503,6 @@ async function addTrackFromUrl(url) {
     currentTrackId = newTrack.id;
     updateNowPlaying(newTrack);
     renderTrackList();
-    playVideoById(videoId);
   } catch (err) {
     console.error(err);
     alert("영상 정보를 불러오는 중 문제가 발생했어요.");
