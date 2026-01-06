@@ -1,10 +1,12 @@
 html,
 body {
-overflow-x: hidden;
+  overflow-x: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #020617; /* 필요하면 html에도 배경색 */
 }
-height: 100%;
-margin: 0;
-}
+
 
 body {
 background: #020617;
