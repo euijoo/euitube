@@ -70,7 +70,7 @@ const titleEl = document.getElementById("title");
 const artistEl = document.getElementById("artist");
 const thumbnailEl = document.getElementById("thumbnail");
 
-// ===== 유틸: videoId 추출 =====
+// ===== 유틸: videoId / playlistId 추출 =====
 
 function extractVideoId(url) {
   try {
@@ -88,7 +88,17 @@ function extractVideoId(url) {
   }
 }
 
-// ===== Data API: 영상 정보 가져오기 =====
+function extractPlaylistId(url) {
+  try {
+    const u = new URL(url);
+    const listId = u.searchParams.get("list");
+    return listId || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ===== Data API: 영상 / 플레이리스트 정보 가져오기 =====
 
 async function fetchVideoInfo(videoId) {
   const endpoint = "https://www.googleapis.com/youtube/v3/videos";
@@ -121,6 +131,39 @@ async function fetchVideoInfo(videoId) {
     channel: snippet.channelTitle,
     thumbnail: bestThumb,
   };
+}
+
+// playlistId로 안의 videoId 목록 가져오기 (최대 50개 정도만)
+async function fetchPlaylistItems(playlistId, maxTotal = 50) {
+  const endpoint = "https://www.googleapis.com/youtube/v3/playlistItems";
+  let pageToken = "";
+  const videoIds = [];
+
+  while (videoIds.length < maxTotal) {
+    const params = new URLSearchParams({
+      key: API_KEY,
+      part: "contentDetails",
+      playlistId,
+      maxResults: "50",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const res = await fetch(`${endpoint}?${params.toString()}`);
+    if (!res.ok) throw new Error("YouTube Playlist API 오류");
+    const data = await res.json();
+
+    (data.items || []).forEach((item) => {
+      const vid = item.contentDetails?.videoId;
+      if (vid && videoIds.length < maxTotal) {
+        videoIds.push(vid);
+      }
+    });
+
+    if (!data.nextPageToken || videoIds.length >= maxTotal) break;
+    pageToken = data.nextPageToken;
+  }
+
+  return videoIds;
 }
 
 // ===== 미니 플레이어 아이콘 동기화 함수 =====
@@ -180,7 +223,7 @@ function onPlayerStateChange(event) {
 
     const nextIndex = currentIndex + 1;
     if (nextIndex >= tracks.length) {
-      // 마지막 곡이면 멈춤 (원하면 여기서 첫 곡으로 루프 가능)
+      // 마지막 곡이면 멈춤
       return;
     }
 
@@ -367,6 +410,7 @@ function updateNowPlaying(track) {
 
 // ===== 트랙 추가/삭제/재생 =====
 
+// 단일 영상 URL용 (기존 로직)
 async function addTrackFromUrl(url) {
   if (!currentUser) {
     alert("먼저 Google 계정으로 로그인해 주세요.");
@@ -406,6 +450,64 @@ async function addTrackFromUrl(url) {
     console.error(err);
     alert("영상 정보를 불러오는 중 문제가 발생했어요.");
   }
+}
+
+// 플레이리스트 URL/영상 URL 모두 처리
+async function addFromInputUrl(url) {
+  if (!currentUser) {
+    alert("먼저 Google 계정으로 로그인해 주세요.");
+    return;
+  }
+
+  const playlistId = extractPlaylistId(url);
+  if (playlistId) {
+    // 플레이리스트 전체 추가 모드
+    try {
+      const videoIds = await fetchPlaylistItems(playlistId, 50); // 최대 50개
+      if (videoIds.length === 0) {
+        alert("플레이리스트에 추가할 영상이 없습니다.");
+        return;
+      }
+
+      // 기존 tracks 뒤에 이어붙이기 (플레이리스트 순서 유지)
+      const addedTracks = [];
+      for (const vid of videoIds) {
+        try {
+          const info = await fetchVideoInfo(vid);
+          const newTrackData = {
+            videoId: vid,
+            title: info.title,
+            channel: info.channel,
+            thumbnail: info.thumbnail,
+            addedAt: Date.now(),
+          };
+          const docId = await addTrackToFirestore(newTrackData);
+          const newTrack = { id: docId, ...newTrackData };
+          tracks.push(newTrack);
+          addedTracks.push(newTrack);
+        } catch (e) {
+          console.error("플레이리스트 영상 하나 추가 실패:", e);
+        }
+      }
+
+      if (addedTracks.length > 0) {
+        // 플레이리스트에서 추가한 첫 곡으로 재생
+        const firstTrack = addedTracks[0];
+        currentTrackId = firstTrack.id;
+        updateNowPlaying(firstTrack);
+        playVideoById(firstTrack.videoId);
+      }
+
+      renderTrackList();
+    } catch (err) {
+      console.error(err);
+      alert("플레이리스트를 불러오는 중 문제가 발생했어요.");
+    }
+    return;
+  }
+
+  // playlistId 없으면 기존 단일 영상 로직
+  await addTrackFromUrl(url);
 }
 
 async function deleteTrack(id) {
@@ -517,7 +619,7 @@ googleLoginButton.addEventListener("click", async () => {
 logoutButton.addEventListener("click", async () => {
   try {
     await signOut(auth);
-    // 여기서 UI는 굳이 건드리지 않고, onAuthStateChanged에서 일괄 처리
+    // UI는 onAuthStateChanged에서 일괄 처리
   } catch (err) {
     console.error(err);
     alert("로그아웃 중 문제가 발생했어요.");
@@ -568,7 +670,7 @@ onAuthStateChanged(auth, async (user) => {
 addButton.addEventListener("click", () => {
   const url = videoUrlInput.value.trim();
   if (!url) return;
-  addTrackFromUrl(url);
+  addFromInputUrl(url); // 여기서 플레이리스트/단일 영상 둘 다 처리
   videoUrlInput.value = "";
 });
 
