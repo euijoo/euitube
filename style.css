@@ -35,17 +35,19 @@ body {
 /* 상단 커버 섹션 */
 .cover-section {
   width: 100%;
-  padding: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 8px;
 }
 
-/* 상단 큰 썸네일 */
+/* 상단 썸네일: 정사각형 카드 + 최대 크기 제한 */
 #thumbnail {
   display: block;
-  width: 100%;        /* 가로폭에 맞게 */
-  max-width: 360px;   /* 너무 커지지 않게 최대값 (원하는 대로 조절) */
-  height: auto;       /* 비율 유지 */
-  border-radius: 12px;
-  object-fit: cover;
+  width: 100%;        /* 컨테이너 가로에 맞춤 */
+  max-width: 320px;   /* 실제 카드 최대 크기 (원하면 숫자 조절) */
+  aspect-ratio: 1 / 1;/* 항상 정사각형 유지 */
+  border-radius: 16px;
+  object-fit: cover;  /* 비율 유지하면서 넘치는 부분 잘라냄 */
   margin: 0 auto;     /* 가운데 정렬 */
 }
 
