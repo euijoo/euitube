@@ -1021,8 +1021,7 @@ onAuthStateChanged(auth, async (user) => {
     mainScreen.classList.remove("hidden");
 
     // 앨범 로딩은 필요해지면 주석 해제
-    // await loadAlbumsFromFirestore();
-
+    await loadAlbumsFromFirestore();
     await loadTracksFromFirestore();
     renderTrackList();
 
