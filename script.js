@@ -38,9 +38,12 @@ const API_KEY = "AIzaSyBysIkRsY2eIwHAqv2oSA8uh6XLiBvXtQ4";
 
 let currentUser = null;
 let player = null;
-// { id, videoId, title, channel, thumbnail, customThumbnail?, addedAt }
+// { id, videoId, title, channel, thumbnail, customThumbnail?, addedAt, albumId? }
 let tracks = [];
 let currentTrackId = null;
+
+let albums = []; // { id, name, createdAt } 앨범 리스트
+
 
 let playClickLock = false;
 
@@ -222,6 +225,46 @@ function getTracksCollectionRef(uid) {
   return collection(db, "users", uid, "tracks");
 }
 
+// ✅ 앨범 컬렉션
+function getAlbumsCollectionRef(uid) {
+  return collection(db, "users", uid, "albums");
+}
+
+async function loadAlbumsFromFirestore() {
+  if (!currentUser) return;
+
+  const colRef = getAlbumsCollectionRef(currentUser.uid);
+  const snap = await getDocs(colRef);
+  const list = [];
+  snap.forEach((docSnap) => {
+    const data = docSnap.data();
+    list.push({
+      id: docSnap.id,
+      name: data.name,
+      createdAt: data.createdAt,
+    });
+  });
+
+  albums = list.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function addAlbumToFirestore(name) {
+  if (!currentUser) return null;
+  const colRef = getAlbumsCollectionRef(currentUser.uid);
+  const createdAt = Date.now();
+  const docRef = await addDoc(colRef, { name, createdAt });
+  const album = { id: docRef.id, name, createdAt };
+  albums.push(album);
+  return album;
+}
+
+async function updateTrackAlbumInFirestore(id, albumId) {
+  if (!currentUser) return;
+  const trackRef = doc(db, "users", currentUser.uid, "tracks", id);
+  await updateDoc(trackRef, { albumId });
+}
+
+
 async function loadTracksFromFirestore() {
   if (!currentUser) return;
 
@@ -238,6 +281,7 @@ async function loadTracksFromFirestore() {
       thumbnail: data.thumbnail,
       customThumbnail: data.customThumbnail || null,
       addedAt: data.addedAt,
+      albumId: data.albumId || null,   // ✅ 이 줄 추가
     });
   });
 
