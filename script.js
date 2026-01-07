@@ -325,6 +325,7 @@ async function updateTrackCustomThumbnailInFirestore(id, url) {
 
 // ===== UI 렌더링 =====
 
+// albumId 기준으로 분리
 function splitTracksByAlbum() {
   const mainTracks = [];
   const albumTrackMap = {};
@@ -343,6 +344,7 @@ function splitTracksByAlbum() {
   return { mainTracks, albumTrackMap };
 }
 
+// 트랙 li
 function createTrackListItem(track) {
   const li = document.createElement("li");
   li.className = "track-item";
@@ -422,6 +424,7 @@ function createTrackListItem(track) {
   li.appendChild(textBox);
   li.appendChild(metaDiv);
 
+  // 트랙 클릭 → 재생
   li.addEventListener("click", (e) => {
     if (
       e.target === menuBtn ||
@@ -442,6 +445,7 @@ function createTrackListItem(track) {
     playTrack(track.id);
   });
 
+  // ... 버튼 → 메뉴 토글
   menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const isOpen = menu.classList.contains("open");
@@ -451,6 +455,7 @@ function createTrackListItem(track) {
     }
   });
 
+  // Rename title
   renameItem.addEventListener("click", (e) => {
     e.stopPropagation();
     closeAllTrackMenus();
@@ -501,6 +506,7 @@ function createTrackListItem(track) {
     });
   });
 
+  // Change cover
   changeCoverItem.addEventListener("click", (e) => {
     e.stopPropagation();
     closeAllTrackMenus();
@@ -509,6 +515,7 @@ function createTrackListItem(track) {
     showCoverSheetForTrack(track, currentUrl);
   });
 
+  // Move to album (prompt)
   moveToAlbumItem.addEventListener("click", async (e) => {
     e.stopPropagation();
     closeAllTrackMenus();
@@ -565,6 +572,7 @@ function createTrackListItem(track) {
     }
   });
 
+  // Remove from album
   removeFromAlbumItem.addEventListener("click", async (e) => {
     e.stopPropagation();
     closeAllTrackMenus();
@@ -581,6 +589,7 @@ function createTrackListItem(track) {
     }
   });
 
+  // Remove from playlist
   removeItem.addEventListener("click", (e) => {
     e.stopPropagation();
     closeAllTrackMenus();
@@ -591,6 +600,89 @@ function createTrackListItem(track) {
   });
 
   return li;
+}
+
+// 앨범 카드 + 토글 리스트
+function createAlbumItem(album, albumTracks) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "album-item-wrapper";
+
+  const header = document.createElement("div");
+  header.className = "album-item-header";
+
+  // 썸네일: 첫 트랙 커버 or 플레이스홀더
+  const thumb = document.createElement("img");
+  thumb.className = "album-item-thumb";
+  const firstTrack = albumTracks[0];
+  const thumbUrl =
+    firstTrack?.customThumbnail || firstTrack?.thumbnail || "";
+  if (thumbUrl) {
+    thumb.src = thumbUrl;
+  } else {
+    thumb.src =
+      "https://via.placeholder.com/48x48.png?text=A"; // 필요시 교체
+  }
+  thumb.alt = album.name;
+
+  const meta = document.createElement("div");
+  meta.className = "album-item-meta";
+
+  const nameDiv = document.createElement("div");
+  nameDiv.className = "album-item-name";
+  nameDiv.textContent = album.name;
+
+  const countDiv = document.createElement("div");
+  countDiv.className = "album-item-count";
+  const count = albumTracks.length;
+  countDiv.textContent = `${count} track${count > 1 ? "s" : ""}`;
+
+  meta.appendChild(nameDiv);
+  meta.appendChild(countDiv);
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.className = "album-item-toggle";
+  toggleBtn.type = "button";
+  toggleBtn.textContent = "▼";
+
+  header.appendChild(thumb);
+  header.appendChild(meta);
+  header.appendChild(toggleBtn);
+
+  const ul = document.createElement("ul");
+  ul.className = "album-track-list-collapsible";
+  // 기본은 접힌 상태
+  ul.style.maxHeight = "0";
+  ul.style.overflow = "hidden";
+
+  albumTracks.forEach((track) => {
+    const li = createTrackListItem(track);
+    ul.appendChild(li);
+  });
+
+  const toggle = () => {
+    const isOpen = wrapper.classList.contains("open");
+    if (isOpen) {
+      wrapper.classList.remove("open");
+      ul.style.maxHeight = "0";
+      toggleBtn.textContent = "▼";
+    } else {
+      wrapper.classList.add("open");
+      // 전체 높이만큼 펼침
+      ul.style.maxHeight = ul.scrollHeight + "px";
+      toggleBtn.textContent = "▲";
+    }
+  };
+
+  header.addEventListener("click", (e) => {
+    // 헤더 어디를 클릭해도 토글
+    e.stopPropagation();
+    toggle();
+  });
+
+  wrapper.appendChild(header);
+  wrapper.appendChild(ul);
+
+  return wrapper;
 }
 
 function renderTrackList() {
@@ -610,6 +702,7 @@ function renderTrackList() {
 
   const { mainTracks, albumTrackMap } = splitTracksByAlbum();
 
+  // 1) Main list
   const mainSection = document.createElement("div");
   mainSection.className = "album-section";
 
@@ -629,6 +722,7 @@ function renderTrackList() {
   mainSection.appendChild(mainUl);
   trackListEl.appendChild(mainSection);
 
+  // 2) Album cards (accordion)
   const sortedAlbums = [...albums].sort((a, b) =>
     a.name.localeCompare(b.name)
   );
@@ -637,24 +731,8 @@ function renderTrackList() {
     const albumTracks = albumTrackMap[album.id] || [];
     if (albumTracks.length === 0) return;
 
-    const section = document.createElement("div");
-    section.className = "album-section";
-
-    const header = document.createElement("div");
-    header.className = "album-header";
-    header.textContent = album.name;
-
-    const ul = document.createElement("ul");
-    ul.className = "album-track-list";
-
-    albumTracks.forEach((track) => {
-      const li = createTrackListItem(track);
-      ul.appendChild(li);
-    });
-
-    section.appendChild(header);
-    section.appendChild(ul);
-    trackListEl.appendChild(section);
+    const albumItem = createAlbumItem(album, albumTracks);
+    trackListEl.appendChild(albumItem);
   });
 }
 
@@ -1020,7 +1098,6 @@ onAuthStateChanged(auth, async (user) => {
     loginScreen.style.display = "none";
     mainScreen.classList.remove("hidden");
 
-    // 앨범 로딩은 필요해지면 주석 해제
     await loadAlbumsFromFirestore();
     await loadTracksFromFirestore();
     renderTrackList();
