@@ -296,6 +296,10 @@ function renderTrackList() {
     return;
   }
 
+  // 바깥 클릭 시 모든 메뉴 닫기 위해 한 번 초기화
+  document.removeEventListener("click", handleGlobalMenuClose);
+  document.addEventListener("click", handleGlobalMenuClose);
+
   tracks.forEach((track) => {
     const li = document.createElement("li");
     li.className = "track-item";
@@ -328,23 +332,54 @@ function renderTrackList() {
     const metaDiv = document.createElement("div");
     metaDiv.className = "track-item-meta";
 
-    const editBtn = document.createElement("button");
-    editBtn.className = "edit-btn";
-    editBtn.textContent = "편집";
+    // ... 버튼
+    const menuBtn = document.createElement("button");
+    menuBtn.className = "track-menu-btn";
+    menuBtn.type = "button";
+    menuBtn.setAttribute("aria-label", "트랙 메뉴");
+    menuBtn.textContent = "⋯";
 
-    const delBtn = document.createElement("button");
-    delBtn.className = "delete-btn";
-    delBtn.textContent = "삭제";
+    // 메뉴 컨테이너
+    const menu = document.createElement("div");
+    menu.className = "track-menu";
 
-    metaDiv.appendChild(editBtn);
-    metaDiv.appendChild(delBtn);
+    const renameItem = document.createElement("button");
+    renameItem.className = "track-menu-item";
+    renameItem.type = "button";
+    renameItem.textContent = "Rename title";
+
+    const changeCoverItem = document.createElement("button");
+    changeCoverItem.className = "track-menu-item";
+    changeCoverItem.type = "button";
+    changeCoverItem.textContent = "Change cover image";
+
+    const removeItem = document.createElement("button");
+    removeItem.className = "track-menu-item danger";
+    removeItem.type = "button";
+    removeItem.textContent = "Remove from playlist";
+
+    menu.appendChild(renameItem);
+    menu.appendChild(changeCoverItem);
+    menu.appendChild(removeItem);
+
+    metaDiv.appendChild(menuBtn);
+    metaDiv.appendChild(menu);
 
     li.appendChild(img);
     li.appendChild(textBox);
     li.appendChild(metaDiv);
 
+    // 트랙 클릭 → 재생
     li.addEventListener("click", (e) => {
-      if (e.target === delBtn || e.target === editBtn) return;
+      // 메뉴/버튼 영역 클릭은 무시
+      if (
+        e.target === menuBtn ||
+        e.target === renameItem ||
+        e.target === changeCoverItem ||
+        e.target === removeItem
+      )
+        return;
+
       if (playClickLock) return;
       playClickLock = true;
       setTimeout(() => {
@@ -354,13 +389,20 @@ function renderTrackList() {
       playTrack(track.id);
     });
 
-    delBtn.addEventListener("click", async (e) => {
+    // ... 버튼 클릭 → 메뉴 토글
+    menuBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      await deleteTrack(track.id);
+      const isOpen = menu.classList.contains("open");
+      closeAllTrackMenus();
+      if (!isOpen) {
+        menu.classList.add("open");
+      }
     });
 
-    editBtn.addEventListener("click", (e) => {
+    // Rename title
+    renameItem.addEventListener("click", (e) => {
       e.stopPropagation();
+      closeAllTrackMenus();
 
       const currentTitle = track.title;
       const input = document.createElement("input");
@@ -408,8 +450,34 @@ function renderTrackList() {
       });
     });
 
+    // Change cover image (이 트랙 기준으로 바텀 시트 열기)
+    changeCoverItem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeAllTrackMenus();
+
+      const currentUrl = track.customThumbnail || track.thumbnail || "";
+      showCoverSheetForTrack(track, currentUrl);
+    });
+
+    // Remove from playlist
+    removeItem.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      closeAllTrackMenus();
+      await deleteTrack(track.id);
+    });
+
     trackListEl.appendChild(li);
   });
+}
+
+// 전역 메뉴 닫기 핸들러
+function handleGlobalMenuClose() {
+  closeAllTrackMenus();
+}
+
+function closeAllTrackMenus() {
+  const menus = document.querySelectorAll(".track-menu.open");
+  menus.forEach((m) => m.classList.remove("open"));
 }
 
 function resetNowPlayingUI() {
@@ -741,7 +809,7 @@ clearListButton.addEventListener("click", async () => {
   resetNowPlayingUI();
 });
 
-// ===== 상단 커버 변경용 바텀 시트 =====
+// ===== 상단/트랙 커버 변경용 바텀 시트 =====
 
 function ensureCoverSheet() {
   if (coverSheetBackdrop) return;
@@ -812,6 +880,46 @@ function hideCoverSheet() {
   coverSheetBackdrop.classList.remove("show");
 }
 
+// 특정 트랙 기준으로 커버 바꾸기
+function showCoverSheetForTrack(track, currentUrl) {
+  showCoverSheet(currentUrl);
+
+  const handleSave = async () => {
+    const trimmed = coverSheetInput.value.trim();
+    const newCustom = trimmed || null;
+
+    try {
+      await updateTrackCustomThumbnailInFirestore(track.id, newCustom);
+      track.customThumbnail = newCustom;
+      updateNowPlaying(track);
+      renderTrackList();
+    } catch (err) {
+      console.error("커버 이미지 업데이트 실패:", err);
+      alert("커버 이미지를 저장하는 중 오류가 발생했어요.");
+    } finally {
+      hideCoverSheet();
+      coverSheetSaveBtn.removeEventListener("click", handleSave);
+      coverSheetInput.removeEventListener("keydown", handleKeydown);
+    }
+  };
+
+  const handleKeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      hideCoverSheet();
+      coverSheetSaveBtn.removeEventListener("click", handleSave);
+      coverSheetInput.removeEventListener("keydown", handleKeydown);
+    }
+  };
+
+  coverSheetSaveBtn.addEventListener("click", handleSave);
+  coverSheetInput.addEventListener("keydown", handleKeydown);
+}
+
+// 상단 커버 버튼 → 현재 트랙 기준으로 호출
 if (changeCoverBtn) {
   changeCoverBtn.addEventListener("click", () => {
     if (!currentTrackId) {
@@ -822,41 +930,7 @@ if (changeCoverBtn) {
     if (!track) return;
 
     const currentUrl = track.customThumbnail || track.thumbnail || "";
-    showCoverSheet(currentUrl);
-
-    const handleSave = async () => {
-      const trimmed = coverSheetInput.value.trim();
-      const newCustom = trimmed || null;
-
-      try {
-        await updateTrackCustomThumbnailInFirestore(track.id, newCustom);
-        track.customThumbnail = newCustom;
-        updateNowPlaying(track);
-        renderTrackList();
-      } catch (err) {
-        console.error("커버 이미지 업데이트 실패:", err);
-        alert("커버 이미지를 저장하는 중 오류가 발생했어요.");
-      } finally {
-        hideCoverSheet();
-        coverSheetSaveBtn.removeEventListener("click", handleSave);
-        coverSheetInput.removeEventListener("keydown", handleKeydown);
-      }
-    };
-
-    const handleKeydown = (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        hideCoverSheet();
-        coverSheetSaveBtn.removeEventListener("click", handleSave);
-        coverSheetInput.removeEventListener("keydown", handleKeydown);
-      }
-    };
-
-    coverSheetSaveBtn.addEventListener("click", handleSave);
-    coverSheetInput.addEventListener("keydown", handleKeydown);
+    showCoverSheetForTrack(track, currentUrl);
   });
 }
 
