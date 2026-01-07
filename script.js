@@ -676,13 +676,14 @@ async function addTrackFromUrl(url) {
     const info = await fetchVideoInfo(videoId);
 
     const newTrackData = {
-      videoId,
-      title: info.title,
-      channel: info.channel,
-      thumbnail: info.thumbnail,
-      customThumbnail: null,
-      addedAt: Date.now(),
-    };
+  videoId,
+  title: info.title,
+  channel: info.channel,
+  thumbnail: info.thumbnail,
+  customThumbnail: null,
+  addedAt: Date.now(),
+  albumId: null,             // ✅ 기본값
+};
 
     const docId = await addTrackToFirestore(newTrackData);
     const newTrack = { id: docId, ...newTrackData };
@@ -717,13 +718,14 @@ async function addFromInputUrl(url) {
         try {
           const info = await fetchVideoInfo(vid);
           const newTrackData = {
-            videoId: vid,
-            title: info.title,
-            channel: info.channel,
-            thumbnail: info.thumbnail,
-            customThumbnail: null,
-            addedAt: Date.now(),
-          };
+  videoId: vid,
+  title: info.title,
+  channel: info.channel,
+  thumbnail: info.thumbnail,
+  customThumbnail: null,
+  addedAt: Date.now(),
+  albumId: null,             // ✅ 기본값
+};
           const docId = await addTrackToFirestore(newTrackData);
           const newTrack = { id: docId, ...newTrackData };
           tracks.push(newTrack);
