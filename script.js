@@ -736,7 +736,7 @@ function renderTrackList() {
   mainSection.appendChild(mainHeader);
   mainSection.appendChild(mainUl);
   trackListEl.appendChild(mainSection);
-
+}
   // 2) Album cards (accordion)
   const sortedAlbums = [...albums].sort((a, b) =>
     a.name.localeCompare(b.name)
