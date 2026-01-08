@@ -367,11 +367,7 @@ function createTrackListItem(track) {
   titleDiv.className = "track-item-title";
   titleDiv.textContent = track.title;
 
-  const artistDiv = document.createElement("div");
- 
-
   textBox.appendChild(titleDiv);
- 
 
   const metaDiv = document.createElement("div");
   metaDiv.className = "track-item-meta";
@@ -444,13 +440,24 @@ function createTrackListItem(track) {
     playTrack(track.id);
   });
 
-  // ... 버튼 → 메뉴 토글
+  // ... 버튼 → 메뉴 토글 (위/아래 공간에 따라 방향 결정)
   menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const isOpen = menu.classList.contains("open");
     closeAllTrackMenus();
     if (!isOpen) {
       menu.classList.add("open");
+      menu.classList.remove("open-up");
+
+      // 화면에서 여유 공간 계산
+      const rect = menu.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      // 아래 공간이 적고 위쪽이 더 넓으면 위로 열기
+      if (spaceBelow < 140 && spaceAbove > spaceBelow) {
+        menu.classList.add("open-up");
+      }
     }
   });
 
@@ -618,8 +625,7 @@ function createAlbumItem(album, albumTracks) {
   if (thumbUrl) {
     thumb.src = thumbUrl;
   } else {
-    thumb.src =
-      "https://via.placeholder.com/48x48.png?text=A"; // 필요시 교체
+    thumb.src = "https://via.placeholder.com/48x48.png?text=A";
   }
   thumb.alt = album.name;
 
@@ -649,12 +655,11 @@ function createAlbumItem(album, albumTracks) {
 
   const ul = document.createElement("ul");
   ul.className = "album-track-list-collapsible";
-  // 기본은 접힌 상태
   ul.style.maxHeight = "0";
   ul.style.overflow = "hidden";
 
-  albumTracks.forEach((track) => {
-    const li = createTrackListItem(track);
+  albumTracks.forEach((t) => {
+    const li = createTrackListItem(t);
     ul.appendChild(li);
   });
 
@@ -666,14 +671,12 @@ function createAlbumItem(album, albumTracks) {
       toggleBtn.textContent = "▼";
     } else {
       wrapper.classList.add("open");
-      // 전체 높이만큼 펼침
       ul.style.maxHeight = ul.scrollHeight + "px";
       toggleBtn.textContent = "▲";
     }
   };
 
   header.addEventListener("click", (e) => {
-    // 헤더 어디를 클릭해도 토글
     e.stopPropagation();
     toggle();
   });
@@ -712,8 +715,8 @@ function renderTrackList() {
   const mainUl = document.createElement("ul");
   mainUl.className = "album-track-list";
 
-  mainTracks.forEach((track) => {
-    const li = createTrackListItem(track);
+  mainTracks.forEach((t) => {
+    const li = createTrackListItem(t);
     mainUl.appendChild(li);
   });
 
@@ -815,7 +818,10 @@ function handleGlobalMenuClose() {
 
 function closeAllTrackMenus() {
   const menus = document.querySelectorAll(".track-menu.open");
-  menus.forEach((m) => m.classList.remove("open"));
+  menus.forEach((m) => {
+    m.classList.remove("open");
+    m.classList.remove("open-up");
+  });
 }
 
 function resetNowPlayingUI() {
