@@ -737,19 +737,6 @@ function renderTrackList() {
   mainSection.appendChild(mainUl);
   trackListEl.appendChild(mainSection);
 }
-  // 2) Album cards (accordion)
-  const sortedAlbums = [...albums].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-
-  sortedAlbums.forEach((album) => {
-    const albumTracks = albumTrackMap[album.id] || [];
-    if (albumTracks.length === 0) return;
-
-    const albumItem = createAlbumItem(album, albumTracks);
-    trackListEl.appendChild(albumItem);
-  });
-}
 
 // 삭제 확인 모달
 function showDeleteConfirm(onYes) {
