@@ -82,8 +82,8 @@
 
       </main>
 
-      <!-- 하단 미니 플레이어 (앱 전체 공용) -->
-      <footer class="mini-player">
+      <!-- 기존 미니 플레이어 (숨김 처리) -->
+      <footer class="mini-player" style="display: none;">
         <div class="mini-player__left">
           <div class="mini-player__image">
             <img id="miniThumb" src="" alt="mini cover" />
@@ -95,10 +95,34 @@
         </div>
 
         <div class="mini-player__right">
-          <!-- 추후 script.js에서 상태에 따라 ▶/⏸ 아이콘 토글 -->
           <button id="miniPlayPauseBtn" class="mini-player__control-btn" type="button" aria-label="재생/일시정지">
             &#x25B6;&#xFE0E;
           </button>
+        </div>
+      </footer>
+
+      <!-- 새 미니 플레이어 (Figma 디자인) -->
+      <footer class="mini-player-new">
+        <img id="miniThumbNew" class="mini-cover-new" src="" alt="cover">
+        
+        <div class="mini-center">
+          <div class="mini-title-new" id="miniTitleNew">제목</div>
+          <div class="mini-artist-new" id="miniArtistNew">아티스트</div>
+          
+          <div class="mini-progress-container">
+            <span class="mini-time-current" id="miniCurrentTime">0:00</span>
+            <div class="mini-progress-bar" id="miniProgressBar">
+              <div class="mini-progress-fill" id="miniProgressFill"></div>
+            </div>
+            <span class="mini-time-total" id="miniTotalTime">0:00</span>
+          </div>
+        </div>
+        
+        <div class="mini-controls">
+          <button id="miniPlayPauseBtnNew" class="mini-btn-play" type="button" aria-label="재생/일시정지">
+            <span id="miniPlayPauseIcon">❚❚</span>
+          </button>
+          <button id="miniNextBtn" class="mini-btn-next" type="button" aria-label="다음곡">▶|</button>
         </div>
       </footer>
     </div>
