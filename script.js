@@ -1064,12 +1064,14 @@ onAuthStateChanged(auth, async (user) => {
     renderTrackList();
 
     if (tracks.length > 0) {
-      const first = tracks;
-      currentTrackId = first.id;
-      updateNowPlaying(first);
-    } else {
-      resetNowPlayingUI();
-    }
+  // 랜덤 인덱스 선택
+  const randomIndex = Math.floor(Math.random() * tracks.length);
+  const randomTrack = tracks[randomIndex];
+  currentTrackId = randomTrack.id;
+  updateNowPlaying(randomTrack);
+} else {
+  resetNowPlayingUI();
+}
   } else {
     currentUser = null;
     tracks = [];
