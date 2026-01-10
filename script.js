@@ -712,6 +712,23 @@ function resetNowPlayingUI() {
   const miniTitleNew = document.getElementById("miniTitleNew");
   const miniArtistNew = document.getElementById("miniArtistNew");
 
+    // 제목이 길면 슬라이드 애니메이션 켜기
+  if (miniTitleNew) {
+    // 일단 초기화
+    miniTitleNew.classList.remove("marquee-on");
+
+    // 렌더 후 길이 비교를 위해 다음 프레임에서 측정
+    requestAnimationFrame(() => {
+      const parentWidth = miniTitleNew.parentElement
+        ? miniTitleNew.parentElement.clientWidth
+        : 0;
+      if (miniTitleNew.scrollWidth > parentWidth + 8) {
+        miniTitleNew.classList.add("marquee-on");
+      }
+    });
+  }
+
+
   if (miniThumbNew) miniThumbNew.removeAttribute("src");
   if (miniTitleNew) miniTitleNew.textContent = "제목";
   if (miniArtistNew) miniArtistNew.textContent = "아티스트";
