@@ -470,9 +470,9 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;              /* ← hidden 대신 visible */
   transition: max-height 0.2s ease;
-  border-bottom: none;
+  border-bottom: none;            /* 줄 없애고 싶다면 none */
 }
 
 .album-item-wrapper.open .album-item-header {
