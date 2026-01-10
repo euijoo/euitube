@@ -237,7 +237,7 @@ body {
   gap: 10px;
   background: #050509;
   /* 이 줄을 지우거나 주석 처리 */
-  border-bottom: none; 
+  /* border-bottom: 1px solid #111827; */
   cursor: pointer;
   transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
 }
@@ -470,9 +470,9 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  overflow: visible;              /* ← hidden 대신 visible */
+  overflow: hidden;
   transition: max-height 0.2s ease;
-  border-bottom: none;            /* 줄 없애고 싶다면 none */
+  border-bottom: none;
 }
 
 .album-item-wrapper.open .album-item-header {
