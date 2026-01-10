@@ -147,7 +147,6 @@ function onYouTubeIframeAPIReady() {}
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
 function onPlayerReady() {
-  // 플레이어가 준비된 직후에는 아직 재생 전이므로 ▶ 로 초기화
   const playPauseIcon = document.getElementById("miniPlayPauseIcon");
   if (playPauseIcon) {
     playPauseIcon.textContent = "▶";
@@ -158,7 +157,6 @@ function onPlayerReady() {
     navigator.mediaSession.playbackState = "none";
   }
 }
-
 
 function onPlayerStateChange(event) {
   if (!window.YT) return;
@@ -176,7 +174,6 @@ function onPlayerStateChange(event) {
     }
   }
 
-  // 자동 다음 곡 재생은 유지
   if (state === YT.PlayerState.ENDED) {
     if (!currentTrackId || tracks.length === 0) return;
     const currentIndex = tracks.findIndex((t) => t.id === currentTrackId);
@@ -186,10 +183,8 @@ function onPlayerStateChange(event) {
     playTrack(tracks[nextIndex].id);
   }
 
-  // 재생 상태가 바뀔 때마다 is-playing 재계산
   updatePlayingIndicator();
 }
-
 
 // ========= Firestore 헬퍼 =========
 function getTracksCollectionRef(uid) {
@@ -285,7 +280,7 @@ async function updateTrackCustomThumbnailInFirestore(id, url) {
   await updateDoc(trackRef, { customThumbnail: url });
 }
 
-// ========= 트랙/앨범 분리 & 리스트 렌더 =========
+// ========= 트랙/앨범 분리 =========
 function splitTracksByAlbum() {
   const mainTracks = [];
   const albumTrackMap = {};
@@ -381,45 +376,41 @@ function createTrackListItem(track) {
     playClickLock = true;
     setTimeout(() => (playClickLock = false), 400);
 
-    // 항상 "선택"만 수행
     document.querySelectorAll(".track-item.active").forEach((item) => {
       item.classList.remove("active");
     });
     li.classList.add("active");
     currentTrackId = track.id;
     updateNowPlaying(track);
-    // 재생/일시정지는 미니 플레이어 버튼에서만 제어
   });
 
   // ===== 메뉴 버튼들 =====
   menuBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
+    e.stopPropagation();
 
-  const isOpen = menu.classList.contains("open");
-  closeAllTrackMenus();
+    const isOpen = menu.classList.contains("open");
+    closeAllTrackMenus();
 
-  if (!isOpen) {
-    menu.classList.remove("open-up");
+    if (!isOpen) {
+      menu.classList.remove("open-up");
 
-    // 높이 측정을 위해 잠깐 보이게
-    menu.style.visibility = "hidden";
-    menu.classList.add("open");
+      // 높이 측정을 위해 잠깐 보이게
+      menu.style.visibility = "hidden";
+      menu.classList.add("open");
 
-    const rect = menu.getBoundingClientRect();
-    const menuHeight = rect.height || 180;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+      const rect = menu.getBoundingClientRect();
+      const menuHeight = rect.height || 180;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
 
-    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-      menu.classList.add("open-up");
+      if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+        menu.classList.add("open-up");
+      }
+
+      // 다시 보이도록
+      menu.style.visibility = "";
     }
-
-    // 다시 보이도록
-    menu.style.visibility = "";
-  }
-});
-
-
+  });
 
   renameItem.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -480,7 +471,13 @@ function createTrackListItem(track) {
 
     const currentAlbum = albums.find((a) => a.id === track.albumId)?.name || "Main list";
     const input = prompt(
-      ["Move to album", "", `현재 앨범: ${currentAlbum}`, "원하는 앨범 이름을 입력하세요.", "(새 이름이면 새 앨범이 생성됩니다.)"].join("\n"),
+      [
+        "Move to album",
+        "",
+        `현재 앨범: ${currentAlbum}`,
+        "원하는 앨범 이름을 입력하세요.",
+        "(새 이름이면 새 앨범이 생성됩니다.)",
+      ].join("\n"),
       currentAlbum === "Main list" ? "" : currentAlbum
     );
 
@@ -532,80 +529,83 @@ function createTrackListItem(track) {
 
   return li;
 }
+
 function createAlbumItem(album, albumTracks) {
-  const wrapper = document.createElement("div");
+  const wrapper = document.createElement("li");
   wrapper.className = "album-item-wrapper";
+  wrapper.dataset.albumId = album.id;
 
   const header = document.createElement("div");
   header.className = "album-item-header";
 
   const thumb = document.createElement("img");
   thumb.className = "album-item-thumb";
-  const firstTrack = albumTracks[0];
-  const thumbUrl = firstTrack?.customThumbnail || firstTrack?.thumbnail || "";
-  thumb.src = thumbUrl || "https://via.placeholder.com/48x48.png?text=A";
+  const firstTrack = albumTracks[0] || null;
+  thumb.src = firstTrack?.customThumbnail || firstTrack?.thumbnail || thumbnailEl.src || "";
   thumb.alt = album.name;
 
   const meta = document.createElement("div");
   meta.className = "album-item-meta";
 
-  const nameDiv = document.createElement("div");
-  nameDiv.className = "album-item-name";
-  nameDiv.textContent = album.name;
+  const nameEl = document.createElement("div");
+  nameEl.className = "album-item-name";
+  nameEl.textContent = album.name;
 
-  const countDiv = document.createElement("div");
-  countDiv.className = "album-item-count";
-  const count = albumTracks.length;
-  countDiv.textContent = `${count} track${count > 1 ? "s" : ""}`;
+  const countEl = document.createElement("div");
+  countEl.className = "album-item-count";
+  countEl.textContent = `${albumTracks.length} tracks`;
 
-  meta.appendChild(nameDiv);
-  meta.appendChild(countDiv);
+  meta.appendChild(nameEl);
+  meta.appendChild(countEl);
 
   const toggleBtn = document.createElement("button");
   toggleBtn.className = "album-item-toggle";
   toggleBtn.type = "button";
-  toggleBtn.textContent = "▼";
+  toggleBtn.textContent = "▾";
 
   header.appendChild(thumb);
   header.appendChild(meta);
   header.appendChild(toggleBtn);
 
-  const ul = document.createElement("ul");
-  ul.className = "album-track-list-collapsible";
-  ul.style.maxHeight = "0";
+  const collapsible = document.createElement("ul");
+  collapsible.className = "album-track-list-collapsible";
 
-  albumTracks.forEach((t) => ul.appendChild(createTrackListItem(t)));
+  albumTracks.forEach((track) => {
+    const li = createTrackListItem(track);
+    collapsible.appendChild(li);
+  });
+
+  if (openAlbumIds.has(album.id)) {
+    wrapper.classList.add("open");
+    collapsible.style.maxHeight = collapsible.scrollHeight + "px";
+    toggleBtn.textContent = "▴";
+  } else {
+    wrapper.classList.remove("open");
+    collapsible.style.maxHeight = "0px";
+    toggleBtn.textContent = "▾";
+  }
 
   const toggle = () => {
     const isOpen = wrapper.classList.contains("open");
     if (isOpen) {
       wrapper.classList.remove("open");
-      ul.style.maxHeight = "0";
-      toggleBtn.textContent = "▼";
       openAlbumIds.delete(album.id);
+      collapsible.style.maxHeight = "0px";
+      toggleBtn.textContent = "▾";
     } else {
       wrapper.classList.add("open");
-      ul.style.maxHeight = ul.scrollHeight + "px";
-      toggleBtn.textContent = "▲";
       openAlbumIds.add(album.id);
+      collapsible.style.maxHeight = collapsible.scrollHeight + "px";
+      toggleBtn.textContent = "▴";
     }
   };
 
-  header.addEventListener("click", (e) => {
-    e.stopPropagation();
+  header.addEventListener("click", () => {
     toggle();
   });
 
-  if (openAlbumIds.has(album.id)) {
-    wrapper.classList.add("open");
-    setTimeout(() => {
-      ul.style.maxHeight = ul.scrollHeight + "px";
-    }, 0);
-    toggleBtn.textContent = "▲";
-  }
-
   wrapper.appendChild(header);
-  wrapper.appendChild(ul);
+  wrapper.appendChild(collapsible);
   return wrapper;
 }
 
@@ -629,7 +629,8 @@ function renderTrackList() {
   [...albums].sort((a, b) => a.name.localeCompare(b.name)).forEach((album) => {
     const albumTracks = albumTrackMap[album.id] || [];
     if (albumTracks.length > 0) {
-      trackListEl.appendChild(createAlbumItem(album, albumTracks));
+      const wrapper = createAlbumItem(album, albumTracks);
+      trackListEl.appendChild(wrapper);
     }
   });
 
@@ -728,12 +729,8 @@ function resetNowPlayingUI() {
   const miniTitleNew = document.getElementById("miniTitleNew");
   const miniArtistNew = document.getElementById("miniArtistNew");
 
-    // 제목이 길면 슬라이드 애니메이션 켜기
   if (miniTitleNew) {
-    // 일단 초기화
     miniTitleNew.classList.remove("marquee-on");
-
-    // 렌더 후 길이 비교를 위해 다음 프레임에서 측정
     requestAnimationFrame(() => {
       const parentWidth = miniTitleNew.parentElement
         ? miniTitleNew.parentElement.clientWidth
@@ -743,7 +740,6 @@ function resetNowPlayingUI() {
       }
     });
   }
-
 
   if (miniThumbNew) miniThumbNew.removeAttribute("src");
   if (miniTitleNew) miniTitleNew.textContent = "제목";
@@ -758,7 +754,6 @@ function resetNowPlayingUI() {
 function updateNowPlaying(track) {
   const coverUrl = track.customThumbnail || track.thumbnail;
 
-  // 기본 텍스트 / 커버 변경
   titleEl.textContent = track.title;
   artistEl.textContent = track.channel;
   if (coverUrl) {
@@ -785,42 +780,34 @@ function updateNowPlaying(track) {
     miniArtistNew.textContent = track.channel;
   }
 
-    // === 제목이 길면 슬라이드 애니메이션 켜기 ===
-if (miniTitleNew) {
-  miniTitleNew.classList.remove("marquee-on");
-  miniTitleNew.style.removeProperty("--mini-title-offset");
+  if (miniTitleNew) {
+    miniTitleNew.classList.remove("marquee-on");
+    miniTitleNew.style.removeProperty("--mini-title-offset");
 
-  requestAnimationFrame(() => {
-    const wrapper = miniTitleNew.parentElement; // .mini-title-wrapper
-    if (!wrapper) return;
+    requestAnimationFrame(() => {
+      const wrapper = miniTitleNew.parentElement;
+      if (!wrapper) return;
 
-    const parentWidth = wrapper.clientWidth;      // 제목 뷰포트 너비
-    const titleWidth = miniTitleNew.scrollWidth;  // 실제 텍스트 너비
+      const parentWidth = wrapper.clientWidth;
+      const titleWidth = miniTitleNew.scrollWidth;
 
-    // 텍스트가 영역보다 길 때만 슬라이드
-    if (titleWidth > parentWidth + 8) {
-      const offset = titleWidth - parentWidth; // 이만큼만 왼쪽으로 이동
-      miniTitleNew.style.setProperty("--mini-title-offset", `${offset}px`);
-      miniTitleNew.classList.add("marquee-on");
-    }
-  });
-}
-// === 슬라이드 설정 끝 ===
+      if (titleWidth > parentWidth + 8) {
+        const offset = titleWidth - parentWidth;
+        miniTitleNew.style.setProperty("--mini-title-offset", `${offset}px`);
+        miniTitleNew.classList.add("marquee-on");
+      }
+    });
+  }
 
-
-  // ▶ 여기서 "선택 곡"과 "실제 재생 곡"이 같은지 확인해서
-  //   다르면 미리보기 모드(00:00 + ▶)로 초기화
   const playingId = getPlayingVideoIdSafe();
   const isPreview = !playingId || playingId !== track.videoId;
 
   if (isPreview) {
-    // 실제로는 다른 곡이 재생 중이거나, 아직 재생 전 → 미리보기 모드
     if (currentEl) currentEl.textContent = "00:00";
     if (totalEl) totalEl.textContent = "00:00";
     if (fillEl) fillEl.style.width = "0%";
     if (playPauseIcon) playPauseIcon.textContent = "▶";
   } else {
-    // 선택한 곡이 실제 재생 곡이면, 즉시 현재 진행 상태를 한 번 업데이트
     try {
       const currentTime = player.getCurrentTime();
       const duration = player.getDuration();
@@ -840,7 +827,6 @@ if (miniTitleNew) {
     } catch (e) {}
   }
 
-  // Media Session 메타데이터는 선택 곡 기준으로 유지
   if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
@@ -854,8 +840,6 @@ if (miniTitleNew) {
     });
   }
 }
-
-
 
 // ========= 트랙 추가/삭제 =========
 async function addTrackFromUrl(url) {
@@ -971,11 +955,8 @@ async function deleteTrack(id) {
   renderTrackList();
 }
 
-
-
 // 실제 재생 중인 곡에 is-playing 클래스 반영
 function updatePlayingIndicator() {
-  // 일단 전부 제거
   document.querySelectorAll(".track-item.is-playing").forEach((item) => {
     item.classList.remove("is-playing");
   });
@@ -987,7 +968,6 @@ function updatePlayingIndicator() {
   );
   if (!currentLi) return;
 
-  // 실제로 플레이어에서 재생 중인 videoId와 곡 videoId가 같을 때만 표시
   const track = tracks.find((t) => t.id === currentTrackId);
   if (!track) return;
 
@@ -997,12 +977,11 @@ function updatePlayingIndicator() {
   }
 }
 
-// ▶ playTrack: 다른 곳(자동 다음곡, next 버튼, 처음 선택 등)에서만 호출
+// ▶ playTrack: 자동 다음곡/next 버튼/첫 재생 등에서만 호출
 function playTrack(id) {
   const track = tracks.find((t) => t.id === id);
   if (!track) return;
 
-  // active만 관리
   document.querySelectorAll(".track-item.active").forEach((item) => {
     item.classList.remove("active");
   });
@@ -1016,7 +995,6 @@ function playTrack(id) {
   updateNowPlaying(track);
   playVideoById(track.videoId);
 
-  // 실제 재생 시작 후 표시 갱신
   setTimeout(updatePlayingIndicator, 300);
 }
 
@@ -1077,11 +1055,9 @@ function getPlayingVideoIdSafe() {
   if (!player || !window.YT) return null;
 
   try {
-    // getVideoData 가 가장 안정적
     const data = player.getVideoData && player.getVideoData();
     if (data && data.video_id) return data.video_id;
 
-    // fallback: getVideoUrl 사용
     const url = player.getVideoUrl && player.getVideoUrl();
     if (!url) return null;
     const urlObj = new URL(url);
@@ -1095,7 +1071,6 @@ function getPlayingVideoIdSafe() {
   }
 }
 
-
 function formatTime(sec) {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
@@ -1108,7 +1083,6 @@ function updateNewMiniPlayer() {
   const totalEl = document.getElementById("miniTotalTime");
   const fillEl = document.getElementById("miniProgressFill");
 
-  // 플레이어가 아직 없으면 항상 ▶ + 00:00
   if (!player || !window.YT) {
     if (playPauseIcon) playPauseIcon.textContent = "▶";
     if (currentEl) currentEl.textContent = "00:00";
@@ -1117,14 +1091,12 @@ function updateNewMiniPlayer() {
     return;
   }
 
-  // 현재 선택된 곡과 실제 재생 중인 곡 비교
   const playingId = getPlayingVideoIdSafe();
   const currentTrack = tracks.find((t) => t.id === currentTrackId) || null;
   const isPreview =
     !currentTrack || !playingId || playingId !== currentTrack.videoId;
 
   if (isPreview) {
-    // 선택한 곡이 실제 재생 곡과 다르면 → 미리보기 상태 유지
     if (currentEl) currentEl.textContent = "00:00";
     if (totalEl) totalEl.textContent = "00:00";
     if (fillEl) fillEl.style.width = "0%";
@@ -1132,7 +1104,6 @@ function updateNewMiniPlayer() {
     return;
   }
 
-  // 여기부터는 "선택 곡 === 실제 재생 곡" 인 경우
   try {
     const state = player.getPlayerState();
     if (playPauseIcon) {
@@ -1156,12 +1127,9 @@ function updateNewMiniPlayer() {
       }
     }
   } catch (e) {
-    // 에러가 나면 최소한 아이콘만 재생/일시정지 정도로 맞춰둔다
     if (playPauseIcon) playPauseIcon.textContent = "▶";
   }
 }
-
-
 
 setInterval(updateNewMiniPlayer, 1000);
 
@@ -1191,23 +1159,19 @@ if (playPauseBtnNew) {
     const track = tracks.find((t) => t.id === currentTrackId);
     if (!track) return;
 
-    // 1) 플레이어가 아직 없으면 → 현재 선택된 곡으로 새로 재생 시작 (첫 클릭)
     if (!player || !window.YT) {
       playTrack(track.id);
       return;
     }
 
     try {
-      // 현재 재생 중인 videoId를 안전하게 얻기
       const playingId = getPlayingVideoIdSafe();
 
-      // 2) 플레이어는 있는데, 현재 재생 중인 곡이 선택된 곡과 다르면 → 새 곡으로 갈아타기
       if (!playingId || playingId !== track.videoId) {
         playTrack(track.id);
         return;
       }
 
-      // 3) 같은 곡이면 → 재생/일시정지 토글
       const state = player.getPlayerState();
       if (state === YT.PlayerState.PLAYING) {
         player.pauseVideo();
@@ -1216,14 +1180,10 @@ if (playPauseBtnNew) {
       }
       updateNewMiniPlayer();
     } catch (e) {
-      // 예외 시에도 선택된 곡 기준으로 다시 재생 시도
       playTrack(track.id);
     }
   });
 }
-
-
-
 
 // 다음 곡 버튼
 const miniNextBtn = document.getElementById("miniNextBtn");
@@ -1277,7 +1237,6 @@ onAuthStateChanged(auth, async (user) => {
     renderTrackList();
 
     if (tracks.length > 0) {
-      // 랜덤 트랙 선택 (선택만, 자동 재생 없음)
       const randomIndex = Math.floor(Math.random() * tracks.length);
       const randomTrack = tracks[randomIndex];
       currentTrackId = randomTrack.id;
