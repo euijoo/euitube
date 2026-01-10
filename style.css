@@ -545,6 +545,49 @@ body {
   text-overflow: ellipsis;
 }
 
+/* 긴 제목을 부드럽게 슬라이드 */
+.mini-title-new-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* JS에서 길이에 따라 .marquee-on 클래스를 붙이면 슬라이드 */
+.mini-title-new.marquee-on {
+  display: inline-block;
+  white-space: nowrap;
+  animation: mini-title-marquee 12s linear infinite;
+}
+
+/* 기본 상태는 한 줄 말줄임 (지금과 동일) */
+.mini-title-new {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 슬라이드 키프레임 */
+@keyframes mini-title-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(0); /* 잠깐 멈춤 */
+  }
+  90% {
+    transform: translateX(calc(-100% + 160px)); /* 160px 정도만 보이게 이동 (필요시 조절) */
+  }
+  100% {
+    transform: translateX(calc(-100% + 160px));
+  }
+}
+
+
+
+
 .mini-artist-new {
   font-size: 13px;
   color: #666;
