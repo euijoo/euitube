@@ -566,13 +566,14 @@ body {
     transform: translateX(0); /* 잠깐 멈춤 */
   }
   85% {
-    /* "텍스트 전체 - 부모 너비" 만큼만 왼쪽으로 이동 */
-    transform: translateX(calc(-1 * (100% - 100vw))); /* 임시 값, 아래 JS에서 정확히 맞춤 */
+    /* JS에서 넣어준 --mini-title-offset 만큼만 왼쪽으로 이동 */
+    transform: translateX(calc(-1 * var(--mini-title-offset, 0px)));
   }
   100% {
-    transform: translateX(calc(-1 * (100% - 100vw)));
+    transform: translateX(calc(-1 * var(--mini-title-offset, 0px)));
   }
 }
+
 
 
 
