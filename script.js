@@ -1171,28 +1171,22 @@ if (progressBar) {
 const playPauseBtnNew = document.getElementById("miniPlayPauseBtnNew");
 if (playPauseBtnNew) {
   playPauseBtnNew.addEventListener("click", () => {
-    // 선택된 곡이 없으면 아무 것도 하지 않음
     if (!currentTrackId) return;
     const track = tracks.find((t) => t.id === currentTrackId);
     if (!track) return;
 
-    // 1) 플레이어가 아직 없으면 → 현재 선택된 곡으로 새로 재생 시작
+    // 1) 플레이어가 아직 없으면 → 현재 선택된 곡으로 새로 재생 시작 (한 번만 눌러도)
     if (!player || !window.YT) {
       playTrack(track.id);
       return;
     }
 
     try {
-      // 2) 플레이어는 있는데, 현재 재생 중인 곡이 선택된 곡과 다르면 → 새 곡으로 갈아타기
-      const currentVideoUrl = player.getVideoUrl();
-      // YouTube URL 에서 videoId 추출
-      const urlObj = new URL(currentVideoUrl);
-      const playingId =
-        urlObj.searchParams.get("v") ||
-        urlObj.pathname.split("/").pop();
+      // 현재 재생 중인 videoId를 안전하게 얻기
+      const playingId = getPlayingVideoIdSafe();
 
-      if (playingId && playingId !== track.videoId) {
-        // 다른 곡이 재생 중이었으므로, 선택된 곡으로 교체 재생
+      // 2) 플레이어는 있는데, 현재 재생 중인 곡이 선택된 곡과 다르면 → 새 곡으로 갈아타기
+      if (!playingId || playingId !== track.videoId) {
         playTrack(track.id);
         return;
       }
@@ -1206,11 +1200,12 @@ if (playPauseBtnNew) {
       }
       updateNewMiniPlayer();
     } catch (e) {
-      // 예외 시에도 선택된 곡 기준으로 다시 재생
+      // 예외 시에도 선택된 곡 기준으로 다시 재생 (여기서도 한 번만 눌러도 바로 시도)
       playTrack(track.id);
     }
   });
 }
+
 
 
 // 다음 곡 버튼
