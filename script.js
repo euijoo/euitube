@@ -915,12 +915,19 @@ function playTrack(id) {
   const track = tracks.find((t) => t.id === id);
   if (!track) return;
 
+  // active / is-playing 제거
   document.querySelectorAll(".track-item.active").forEach((item) => {
     item.classList.remove("active");
   });
+  document.querySelectorAll(".track-item.is-playing").forEach((item) => {
+    item.classList.remove("is-playing");
+  });
 
   const currentLi = document.querySelector(`[data-track-id="${id}"]`);
-  if (currentLi) currentLi.classList.add("active");
+  if (currentLi) {
+    currentLi.classList.add("active");
+    currentLi.classList.add("is-playing"); // 실제 재생 중 표시
+  }
 
   currentTrackId = id;
   updateNowPlaying(track);
