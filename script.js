@@ -769,6 +769,21 @@ function updateNowPlaying(track) {
     miniArtistNew.textContent = track.channel;
   }
 
+  // === 제목이 길면 슬라이드 애니메이션 켜기 ===
+  if (miniTitleNew) {
+    miniTitleNew.classList.remove("marquee-on");
+
+    requestAnimationFrame(() => {
+      const parentWidth = miniTitleNew.parentElement
+        ? miniTitleNew.parentElement.clientWidth
+        : 0;
+      if (miniTitleNew.scrollWidth > parentWidth + 8) {
+        miniTitleNew.classList.add("marquee-on");
+      }
+    });
+  }
+  // === 슬라이드 설정 끝 ===
+
   // ▶ 여기서 "선택 곡"과 "실제 재생 곡"이 같은지 확인해서
   //   다르면 미리보기 모드(00:00 + ▶)로 초기화
   const playingId = getPlayingVideoIdSafe();
@@ -815,6 +830,7 @@ function updateNowPlaying(track) {
     });
   }
 }
+
 
 
 // ========= 트랙 추가/삭제 =========
