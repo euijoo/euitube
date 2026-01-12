@@ -26,7 +26,7 @@ function setRandomMainCover() {
   // 상단 메인 커버
   thumbnailEl.src = url;
   if (titleEl) titleEl.textContent = "Welcome";
-  if (artistEl) artistEl.textContent = "Select album or track";
+
 
   // 미니 플레이어 동기화
   const miniThumbNew = document.getElementById("miniThumbNew");
@@ -1134,7 +1134,7 @@ function closeAllTrackMenus() {
 // ✅ 상단 랜덤 커버는 유지, 텍스트/미니플레이어만 초기화
 function resetNowPlayingUI() {
   titleEl.textContent = "제목";
-  artistEl.textContent = "아티스트";
+  artistEl.textContent = "";
 
   const miniThumbNew = document.getElementById("miniThumbNew");
   const miniTitleNew = document.getElementById("miniTitleNew");
