@@ -1,4 +1,5 @@
 let openAlbumIds = new Set();
+let currentAlbumId = null; // ✅ 현재 선택된 앨범 ID
 
 // ===== Firebase SDK import & 초기화 =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
@@ -335,6 +336,11 @@ async function deleteAlbum(album) {
       }
     });
 
+    if (currentAlbumId === album.id) {
+      currentAlbumId = null;
+      resetNowPlayingUI();
+    }
+
     renderTrackList();
   } catch (err) {
     alert("앨범을 삭제하는 중 오류가 발생했어요.");
@@ -399,6 +405,7 @@ async function updateTrackCustomThumbnailInFirestore(id, url) {
   const trackRef = doc(db, "users", currentUser.uid, "tracks", id);
   await updateDoc(trackRef, { customThumbnail: url });
 }
+
 // ========= 트랙/앨범 분리 =========
 function splitTracksByAlbum() {
   const mainTracks = [];
@@ -493,6 +500,7 @@ function createTrackListItem(track) {
     });
     li.classList.add("active");
     currentTrackId = track.id;
+    currentAlbumId = track.albumId || null; // ✅ 트랙 선택 시 앨범도 동기화
     updateNowPlaying(track);
   });
 
@@ -550,6 +558,7 @@ function createTrackListItem(track) {
     try {
       await updateTrackAlbumInFirestore(track.id, null);
       track.albumId = null;
+      if (currentTrackId === track.id) currentAlbumId = null;
       renderTrackList();
     } catch (err) {
       alert("앨범에서 빼는 중 오류가 발생했어요.");
@@ -699,6 +708,7 @@ function createAlbumItem(album, albumTracks) {
     if (titleEl) titleEl.textContent = album.name;
     if (artistEl) artistEl.textContent = `${albumTracks.length} tracks`;
 
+    currentAlbumId = album.id; // ✅ 현재 앨범 설정
     toggle();
   });
 
@@ -755,7 +765,7 @@ function createAlbumItem(album, albumTracks) {
         await updateAlbumCoverInFirestore(album.id, newCover);
         album.coverUrl = newCover;
 
-        if (titleEl && titleEl.textContent === album.name) {
+        if (currentAlbumId === album.id) {
           if (newCover) {
             thumbnailEl.src = newCover;
           } else if (firstTrackLocal?.thumbnail) {
@@ -802,6 +812,10 @@ function createAlbumItem(album, albumTracks) {
     if (!name || name === album.name) return;
 
     await renameAlbum(album, name);
+
+    if (currentAlbumId === album.id && titleEl) {
+      titleEl.textContent = name;
+    }
   });
 
   deleteItem.addEventListener("click", (e) => {
@@ -940,6 +954,7 @@ function showAlbumSelectSheet(track) {
   mainBtn.textContent = "Main list";
   mainBtn.addEventListener("click", async () => {
     await moveTrackToAlbum(track, null, null);
+    if (currentTrackId === track.id) currentAlbumId = null;
     close();
   });
   listBox.appendChild(mainBtn);
@@ -952,6 +967,7 @@ function showAlbumSelectSheet(track) {
       btn.textContent = album.name;
       btn.addEventListener("click", async () => {
         await moveTrackToAlbum(track, album.id, null);
+        if (currentTrackId === track.id) currentAlbumId = album.id;
         close();
       });
       listBox.appendChild(btn);
@@ -964,6 +980,10 @@ function showAlbumSelectSheet(track) {
       return;
     }
     await moveTrackToAlbum(track, null, name);
+    const newAlbum = albums.find(
+      (a) => a.name.toLowerCase() === name.toLowerCase()
+    );
+    if (newAlbum && currentTrackId === track.id) currentAlbumId = newAlbum.id;
     close();
   };
 
@@ -986,6 +1006,7 @@ function showAlbumSelectSheet(track) {
   backdrop.classList.add("show");
   newInput.focus();
 }
+
 function showDeleteConfirm(onYes) {
   let backdrop = document.querySelector(".delete-confirm-backdrop");
   if (!backdrop) {
@@ -1211,6 +1232,7 @@ async function addTrackFromUrl(url) {
 
     tracks.unshift(newTrack);
     currentTrackId = newTrack.id;
+    currentAlbumId = null;
     updateNowPlaying(newTrack);
     renderTrackList();
   } catch (err) {
@@ -1259,6 +1281,7 @@ async function addFromInputUrl(url) {
       if (addedTracks.length > 0) {
         const firstTrack = addedTracks[0];
         currentTrackId = firstTrack.id;
+        currentAlbumId = null;
         updateNowPlaying(firstTrack);
         playVideoById(firstTrack.videoId);
       }
@@ -1284,9 +1307,12 @@ async function deleteTrack(id) {
   if (currentTrackId === id) {
     currentTrackId = tracks[0]?.id || null;
     if (currentTrackId) {
-      updateNowPlaying(tracks[0]);
-      playVideoById(tracks[0].videoId);
+      const t = tracks[0];
+      currentAlbumId = t.albumId || null;
+      updateNowPlaying(t);
+      playVideoById(t.videoId);
     } else {
+      currentAlbumId = null;
       resetNowPlayingUI();
     }
   }
@@ -1329,6 +1355,7 @@ function playTrack(id) {
   }
 
   currentTrackId = id;
+  currentAlbumId = track.albumId || null;
   updateNowPlaying(track);
   playVideoById(track.videoId);
 
@@ -1530,6 +1557,7 @@ if (miniNextBtn) {
     playTrack(tracks[nextIndex].id);
   });
 }
+
 // ========= 로그인/로그아웃 & 초기 로딩 =========
 googleLoginButton.addEventListener("click", async () => {
   try {
@@ -1590,18 +1618,15 @@ onAuthStateChanged(auth, async (user) => {
     await loadTracksFromFirestore();
     renderTrackList();
 
-    if (tracks.length > 0) {
-      const randomIndex = Math.floor(Math.random() * tracks.length);
-      const randomTrack = tracks[randomIndex];
-      currentTrackId = randomTrack.id;
-      updateNowPlaying(randomTrack);
-    } else {
-      resetNowPlayingUI();
-    }
+    // ✅ 랜덤 트랙 선택 제거: 처음에는 아무 것도 선택하지 않음
+    currentTrackId = null;
+    currentAlbumId = null;
+    resetNowPlayingUI();
   } else {
     currentUser = null;
     tracks = [];
     currentTrackId = null;
+    currentAlbumId = null;
 
     if (userNickEl) userNickEl.textContent = "";
     if (userAvatarEl) userAvatarEl.src = "";
@@ -1635,6 +1660,7 @@ clearListButton.addEventListener("click", async () => {
   await clearTracksInFirestore();
   tracks = [];
   currentTrackId = null;
+  currentAlbumId = null;
   renderTrackList();
   resetNowPlayingUI();
 });
