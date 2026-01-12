@@ -1,6 +1,32 @@
 let openAlbumIds = new Set();
 let currentAlbumId = null; // ✅ 현재 선택된 앨범 ID
 
+// ✅ 초기 랜덤 메인 커버 후보들
+const INITIAL_MAIN_COVERS = [
+  "https://i.pinimg.com/736x/fc/e2/09/fce209249135d840c6ebdcb983b97460.jpg",
+  "https://i.pinimg.com/1200x/20/47/fc/2047fc8e641fbb71277f83674ae76fc8.jpg",
+  "https://i.pinimg.com/736x/7d/35/c6/7d35c6c1372bb2b173f2fac5b586fd03.jpg",
+  "https://i.pinimg.com/736x/ae/72/61/ae7261114527edf8911671b8ab675c74.jpg",
+  "https://i.pinimg.com/1200x/b0/73/55/b073552d1d7489afece8ed0d995be0aa.jpg",
+  "https://i.pinimg.com/736x/20/0d/81/200d81cff058a26241923b34cf986151.jpg",
+  "https://i.pinimg.com/1200x/12/6e/9a/126e9a7ba3d432c47d11cefc396e282f.jpg",
+  "https://i.pinimg.com/1200x/0f/30/10/0f301026ac51c0c5a57bae244ca87a5e.jpg",
+  "https://i.pinimg.com/736x/41/d8/95/41d8958cf55017f31e44e89b8864e630.jpg",
+  "https://i.pinimg.com/736x/ba/48/21/ba48216b2877caa1de692ba7c80c6a6d.jpg",
+];
+
+function setRandomMainCover() {
+  if (!thumbnailEl) return;
+  if (!INITIAL_MAIN_COVERS.length) return;
+
+  const idx = Math.floor(Math.random() * INITIAL_MAIN_COVERS.length);
+  const url = INITIAL_MAIN_COVERS[idx];
+
+  thumbnailEl.src = url;
+  if (titleEl) titleEl.textContent = "Welcome";
+  if (artistEl) artistEl.textContent = "Select album or track";
+}
+
 // ===== Firebase SDK import & 초기화 =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import {
@@ -1622,6 +1648,9 @@ onAuthStateChanged(auth, async (user) => {
     currentTrackId = null;
     currentAlbumId = null;
     resetNowPlayingUI();
+
+    // ✅ 로그인 후 랜덤 메인 커버
+    setRandomMainCover();
   } else {
     currentUser = null;
     tracks = [];
@@ -1632,6 +1661,10 @@ onAuthStateChanged(auth, async (user) => {
     if (userAvatarEl) userAvatarEl.src = "";
 
     resetNowPlayingUI();
+
+    // ✅ 비로그인 화면에서도 랜덤 메인 커버
+    setRandomMainCover();
+
     loginScreen.style.display = "flex";
     mainScreen.classList.add("hidden");
     loginError.textContent = "";
