@@ -414,7 +414,7 @@ function splitTracksByAlbum() {
   return { mainTracks, albumTrackMap };
 }
 
-// B안: 리스트 클릭은 선택만, 재생은 미니 플레이어 버튼으로만
+// 리스트 클릭은 선택만, 재생은 미니 플레이어 버튼
 function createTrackListItem(track) {
   const li = document.createElement("li");
   li.className = "track-item";
@@ -732,68 +732,61 @@ function createAlbumItem(album, albumTracks) {
     }
   });
 
+  // 앨범 커버 전용 변경 (트랙에는 영향 없음)
   changeCoverAlbumItem.addEventListener("click", (e) => {
-  e.stopPropagation();
-  albumMenu.classList.remove("open", "open-up");
+    e.stopPropagation();
+    albumMenu.classList.remove("open", "open-up");
 
-  const firstTrackLocal = albumTracks[0] || null;
-  const currentCover =
-    album.coverUrl ||
-    firstTrackLocal?.customThumbnail ||
-    firstTrackLocal?.thumbnail ||
-    thumbnailEl.src ||
-    "";
+    const firstTrackLocal = albumTracks[0] || null;
+    const currentCover =
+      album.coverUrl ||
+      firstTrackLocal?.customThumbnail ||
+      firstTrackLocal?.thumbnail ||
+      thumbnailEl.src ||
+      "";
 
-  // ✅ 여기서는 "트랙용"이 아니라 그냥 coverSheet만 열기
-  showCoverSheet(currentCover);
+    showCoverSheet(currentCover);
 
-  const handleSave = async () => {
-    const trimmed = coverSheetInput.value.trim();
-    const newCover = trimmed || null;
+    const handleSave = async () => {
+      const trimmed = coverSheetInput.value.trim();
+      const newCover = trimmed || null;
 
-    try {
-      // ✅ 앨범 Firestore만 업데이트
-      await updateAlbumCoverInFirestore(album.id, newCover);
-      album.coverUrl = newCover;
+      try {
+        await updateAlbumCoverInFirestore(album.id, newCover);
+        album.coverUrl = newCover;
 
-      // 상단에 지금 이 앨범이 표시 중이면 즉시 반영
-      if (titleEl && titleEl.textContent === album.name) {
-        if (newCover) {
-          thumbnailEl.src = newCover;
-        } else if (firstTrackLocal?.thumbnail) {
-          thumbnailEl.src =
-            firstTrackLocal.customThumbnail || firstTrackLocal.thumbnail;
-        } else {
-          thumbnailEl.removeAttribute("src");
+        if (titleEl && titleEl.textContent === album.name) {
+          if (newCover) {
+            thumbnailEl.src = newCover;
+          } else if (firstTrackLocal?.thumbnail) {
+            thumbnailEl.src =
+              firstTrackLocal.customThumbnail || firstTrackLocal.thumbnail;
+          } else {
+            thumbnailEl.removeAttribute("src");
+          }
         }
+
+        renderTrackList();
+      } catch (err) {
+        alert("앨범 커버를 변경하는 중 오류가 발생했어요.");
+      } finally {
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
       }
+    };
 
-      renderTrackList();
-    } catch (err) {
-      alert("앨범 커버를 변경하는 중 오류가 발생했어요.");
-    } finally {
-      hideCoverSheet();
-      coverSheetSaveBtn.removeEventListener("click", handleSave);
-      coverSheetInput.removeEventListener("keydown", handleKeydown);
-    }
-  };
-
-  const handleKeydown = (e2) => {
-    if (e2.key === "Enter") {
-      e2.preventDefault();
-      handleSave();
-    } else if (e2.key === "Escape") {
-      e2.preventDefault();
-      hideCoverSheet();
-      coverSheetSaveBtn.removeEventListener("click", handleSave);
-      coverSheetInput.removeEventListener("keydown", handleKeydown);
-    }
-  };
-
-  coverSheetSaveBtn.addEventListener("click", handleSave);
-  coverSheetInput.addEventListener("keydown", handleKeydown);
-});
-
+    const handleKeydown = (e2) => {
+      if (e2.key === "Enter") {
+        e2.preventDefault();
+        handleSave();
+      } else if (e2.key === "Escape") {
+        e2.preventDefault();
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
+      }
+    };
 
     coverSheetSaveBtn.addEventListener("click", handleSave);
     coverSheetInput.addEventListener("keydown", handleKeydown);
@@ -1818,6 +1811,7 @@ function showCoverSheetForTrack(track, currentUrl) {
   coverSheetInput.addEventListener("keydown", handleKeydown);
 }
 
+// 상단 메인 커버 버튼: 현재 트랙 커버만 수정
 if (changeCoverBtn) {
   changeCoverBtn.addEventListener("click", () => {
     if (!currentTrackId) {
@@ -1832,7 +1826,6 @@ if (changeCoverBtn) {
     );
   });
 }
-
 
 // iOS 확대 방지
 document.addEventListener("gesturestart", function (e) {
