@@ -26,7 +26,7 @@ function setRandomMainCover() {
   // 상단 메인 커버
   thumbnailEl.src = url;
   if (titleEl) titleEl.textContent = "Welcome";
-
+  // 상단 채널 문구는 사용 안 함
 
   // 미니 플레이어 동기화
   const miniThumbNew = document.getElementById("miniThumbNew");
@@ -97,12 +97,16 @@ const loginScreen = document.getElementById("login-screen");
 const googleLoginButton = document.getElementById("googleLoginButton");
 const loginError = document.getElementById("loginError");
 const mainScreen = document.getElementById("main-screen");
-const logoutButton = document.getElementById("logoutButton");
+// 상단바 관련: 별도 Logout 버튼은 사용 안 함
+// const logoutButton = document.getElementById("logoutButton");
 const userAvatarEl = document.getElementById("userAvatar");
 const userNickEl = document.getElementById("userNick");
+const appLogoButton = document.getElementById("appLogoButton");
+
 const addButton = document.getElementById("addButton");
 const videoUrlInput = document.getElementById("videoUrl");
-const clearListButton = document.getElementById("clearListButton");
+// 전체 비우기 버튼은 제거 버전
+// const clearListButton = document.getElementById("clearListButton");
 const trackListEl = document.getElementById("trackList");
 const titleEl = document.getElementById("title");
 const artistEl = document.getElementById("artist");
@@ -756,7 +760,7 @@ function createAlbumItem(album, albumTracks) {
     }
 
     if (titleEl) titleEl.textContent = album.name;
-    if (artistEl) artistEl.textContent = `${albumTracks.length} tracks`;
+    // 상단 artistEl은 사용 안 함
 
     currentAlbumId = album.id; // ✅ 현재 앨범 설정
     toggle();
@@ -1626,14 +1630,33 @@ googleLoginButton.addEventListener("click", async () => {
   }
 });
 
-logoutButton.addEventListener("click", async () => {
+// 상단 프로필/닉네임 클릭 → 로그아웃 확인 후 실행
+async function confirmAndLogout() {
+  const ok = window.confirm("로그아웃 하시겠어요?");
+  if (!ok) return;
   try {
     await signOut(auth);
   } catch (err) {
     console.error(err);
     alert("로그아웃 중 문제가 발생했어요.");
   }
-});
+}
+
+if (userAvatarEl) {
+  userAvatarEl.style.cursor = "pointer";
+  userAvatarEl.addEventListener("click", confirmAndLogout);
+}
+if (userNickEl) {
+  userNickEl.style.cursor = "pointer";
+  userNickEl.addEventListener("click", confirmAndLogout);
+}
+
+// ejtube 로고 클릭 → 전체 초기화 (새로고침)
+if (appLogoButton) {
+  appLogoButton.addEventListener("click", () => {
+    window.location.reload();
+  });
+}
 
 onAuthStateChanged(auth, async (user) => {
   console.log("auth state changed:", user);
@@ -1706,20 +1729,8 @@ videoUrlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") addButton.click();
 });
 
-clearListButton.addEventListener("click", async () => {
-  if (!currentUser) {
-    alert("먼저 Google 계정으로 로그인해 주세요.");
-    return;
-  }
-  if (!confirm("정말 전체 리스트를 비울까요?")) return;
-
-  await clearTracksInFirestore();
-  tracks = [];
-  currentTrackId = null;
-  currentAlbumId = null;
-  renderTrackList();
-  resetNowPlayingUI();
-});
+// 전체 비우기 버튼은 제거 버전이므로 핸들러도 없음
+// clearListButton.addEventListener(...)
 
 // ========= 메인 타이틀 편집 =========
 if (titleEl && titleEditBtn) {
