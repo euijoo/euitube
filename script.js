@@ -207,7 +207,12 @@ async function loadAlbumsFromFirestore() {
   const list = [];
   snap.forEach((docSnap) => {
     const data = docSnap.data();
-    list.push({ id: docSnap.id, name: data.name, createdAt: data.createdAt });
+    list.push({
+      id: docSnap.id,
+      name: data.name,
+      createdAt: data.createdAt,
+      coverUrl: data.coverUrl || null,
+    });
   });
   albums = list.sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -216,8 +221,8 @@ async function addAlbumToFirestore(name) {
   if (!currentUser) return null;
   const colRef = getAlbumsCollectionRef(currentUser.uid);
   const createdAt = Date.now();
-  const docRef = await addDoc(colRef, { name, createdAt });
-  const album = { id: docRef.id, name, createdAt };
+  const docRef = await addDoc(colRef, { name, createdAt, coverUrl: null });
+  const album = { id: docRef.id, name, createdAt, coverUrl: null };
   albums.push(album);
   return album;
 }
@@ -235,15 +240,20 @@ async function renameAlbumInFirestore(albumId, newName) {
   await updateDoc(albumRef, { name: newName });
 }
 
+// 앨범 커버 변경
+async function updateAlbumCoverInFirestore(albumId, coverUrl) {
+  if (!currentUser) return;
+  const albumRef = doc(db, "users", currentUser.uid, "albums", albumId);
+  await updateDoc(albumRef, { coverUrl });
+}
+
 // 앨범 삭제 (앨범 문서 삭제 + 해당 트랙들 albumId 제거)
 async function deleteAlbumInFirestore(albumId) {
   if (!currentUser) return;
 
-  // 1) albums 컬렉션에서 삭제
   const albumRef = doc(db, "users", currentUser.uid, "albums", albumId);
   await deleteDoc(albumRef);
 
-  // 2) tracks 컬렉션에서 해당 albumId 가진 트랙들 albumId 제거
   const colRef = getTracksCollectionRef(currentUser.uid);
   const snap = await getDocs(colRef);
   const updates = [];
@@ -271,18 +281,15 @@ async function moveTrackToAlbum(track, targetAlbumIdOrNull, newAlbumName) {
   try {
     let targetAlbumId = targetAlbumIdOrNull;
 
-    // 새 앨범 이름이 넘어온 경우: 없으면 생성
     if (!targetAlbumId && newAlbumName) {
       const name = newAlbumName.trim();
       if (!name) {
-        // 이름이 없으면 Main list로 이동(앨범 해제)
         await updateTrackAlbumInFirestore(track.id, null);
         track.albumId = null;
         renderTrackList();
         return;
       }
 
-      // 기존 앨범 중 같은 이름이 있는지 먼저 확인
       let album = albums.find(
         (a) => a.name.toLowerCase() === name.toLowerCase()
       );
@@ -292,7 +299,6 @@ async function moveTrackToAlbum(track, targetAlbumIdOrNull, newAlbumName) {
       targetAlbumId = album.id;
     }
 
-    // targetAlbumId가 null이면 Main list로 이동(앨범 해제)
     await updateTrackAlbumInFirestore(track.id, targetAlbumId || null);
     track.albumId = targetAlbumId || null;
     renderTrackList();
@@ -468,7 +474,6 @@ function createTrackListItem(track) {
   li.appendChild(textBox);
   li.appendChild(metaDiv);
 
-  // ▶ 리스트 클릭: 선택만, 재생 없음
   li.addEventListener("click", (e) => {
     if (
       e.target === menuBtn ||
@@ -491,7 +496,6 @@ function createTrackListItem(track) {
     updateNowPlaying(track);
   });
 
-  // ===== 메뉴 버튼들 =====
   menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
 
@@ -572,11 +576,13 @@ function createAlbumItem(album, albumTracks) {
   const thumb = document.createElement("img");
   thumb.className = "album-item-thumb";
   const firstTrack = albumTracks[0] || null;
-  thumb.src =
+  const thumbSrc =
+    album.coverUrl ||
     firstTrack?.customThumbnail ||
     firstTrack?.thumbnail ||
     thumbnailEl.src ||
     "";
+  if (thumbSrc) thumb.src = thumbSrc;
   thumb.alt = album.name;
 
   const meta = document.createElement("div");
@@ -601,6 +607,10 @@ function createAlbumItem(album, albumTracks) {
   const albumMenu = document.createElement("div");
   albumMenu.className = "album-menu";
 
+  const changeCoverAlbumItem = document.createElement("button");
+  changeCoverAlbumItem.className = "album-menu-item";
+  changeCoverAlbumItem.textContent = "Change cover image";
+
   const renameItem = document.createElement("button");
   renameItem.className = "album-menu-item";
   renameItem.textContent = "Rename album";
@@ -609,6 +619,7 @@ function createAlbumItem(album, albumTracks) {
   deleteItem.className = "album-menu-item danger";
   deleteItem.textContent = "Delete album";
 
+  albumMenu.appendChild(changeCoverAlbumItem);
   albumMenu.appendChild(renameItem);
   albumMenu.appendChild(deleteItem);
 
@@ -665,10 +676,29 @@ function createAlbumItem(album, albumTracks) {
     if (
       e.target === albumMenuBtn ||
       e.target === renameItem ||
-      e.target === deleteItem
+      e.target === deleteItem ||
+      e.target === changeCoverAlbumItem
     ) {
       return;
     }
+
+    const firstTrackLocal = albumTracks[0] || null;
+    const cover =
+      album.coverUrl ||
+      firstTrackLocal?.customThumbnail ||
+      firstTrackLocal?.thumbnail ||
+      thumbnailEl.src ||
+      "";
+
+    if (cover) {
+      thumbnailEl.src = cover;
+    } else {
+      thumbnailEl.removeAttribute("src");
+    }
+
+    if (titleEl) titleEl.textContent = album.name;
+    if (artistEl) artistEl.textContent = `${albumTracks.length} tracks`;
+
     toggle();
   });
 
@@ -700,6 +730,65 @@ function createAlbumItem(album, albumTracks) {
     } else {
       albumMenu.classList.remove("open", "open-up");
     }
+  });
+
+  changeCoverAlbumItem.addEventListener("click", (e) => {
+    e.stopPropagation();
+    albumMenu.classList.remove("open", "open-up");
+
+    const firstTrackLocal = albumTracks[0] || null;
+    const currentCover =
+      album.coverUrl ||
+      firstTrackLocal?.customThumbnail ||
+      firstTrackLocal?.thumbnail ||
+      thumbnailEl.src ||
+      "";
+
+    showCoverSheet(currentCover);
+
+    const handleSave = async () => {
+      const trimmed = coverSheetInput.value.trim();
+      const newCover = trimmed || null;
+
+      try {
+        await updateAlbumCoverInFirestore(album.id, newCover);
+        album.coverUrl = newCover;
+
+        if (titleEl && titleEl.textContent === album.name) {
+          if (newCover) {
+            thumbnailEl.src = newCover;
+          } else if (firstTrackLocal?.thumbnail) {
+            thumbnailEl.src =
+              firstTrackLocal.customThumbnail || firstTrackLocal.thumbnail;
+          } else {
+            thumbnailEl.removeAttribute("src");
+          }
+        }
+
+        renderTrackList();
+      } catch (err) {
+        alert("앨범 커버를 변경하는 중 오류가 발생했어요.");
+      } finally {
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
+      }
+    };
+
+    const handleKeydown = (e2) => {
+      if (e2.key === "Enter") {
+        e2.preventDefault();
+        handleSave();
+      } else if (e2.key === "Escape") {
+        e2.preventDefault();
+        hideCoverSheet();
+        coverSheetSaveBtn.removeEventListener("click", handleSave);
+        coverSheetInput.removeEventListener("keydown", handleKeydown);
+      }
+    };
+
+    coverSheetSaveBtn.addEventListener("click", handleSave);
+    coverSheetInput.addEventListener("keydown", handleKeydown);
   });
 
   renameItem.addEventListener("click", async (e) => {
@@ -1204,7 +1293,6 @@ async function deleteTrack(id) {
   renderTrackList();
 }
 
-// 실제 재생 중인 곡에 is-playing 클래스 반영
 function updatePlayingIndicator() {
   document.querySelectorAll(".track-item.is-playing").forEach((item) => {
     item.classList.remove("is-playing");
@@ -1226,7 +1314,6 @@ function updatePlayingIndicator() {
   }
 }
 
-// ▶ playTrack: 자동 다음곡/next 버튼/첫 재생 등에서만 호출
 function playTrack(id) {
   const track = tracks.find((t) => t.id === id);
   if (!track) return;
@@ -1246,6 +1333,7 @@ function playTrack(id) {
 
   setTimeout(updatePlayingIndicator, 300);
 }
+
 function playVideoById(videoId) {
   if (!player) {
     player = new YT.Player("player", {
@@ -1298,7 +1386,6 @@ function playVideoById(videoId) {
   }
 }
 
-// 현재 YouTube 플레이어에서 재생 중인 videoId 얻기
 function getPlayingVideoIdSafe() {
   if (!player || !window.YT) return null;
 
@@ -1442,7 +1529,6 @@ if (miniNextBtn) {
     playTrack(tracks[nextIndex].id);
   });
 }
-
 // ========= 로그인/로그아웃 & 초기 로딩 =========
 googleLoginButton.addEventListener("click", async () => {
   try {
@@ -1476,13 +1562,11 @@ onAuthStateChanged(auth, async (user) => {
 
   if (user) {
     try {
-      // ✅ 프로필 정보 강제 새로고침
       await user.reload();
     } catch (e) {
       console.warn("user.reload() 실패:", e);
     }
 
-    // reload 이후 최신 객체 다시 가져오기
     const freshUser = auth.currentUser || user;
     currentUser = freshUser;
 
@@ -1528,7 +1612,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-
 // ========= 입력/버튼 핸들러 =========
 addButton.addEventListener("click", () => {
   const url = videoUrlInput.value.trim();
@@ -1554,6 +1637,7 @@ clearListButton.addEventListener("click", async () => {
   renderTrackList();
   resetNowPlayingUI();
 });
+
 // ========= 메인 타이틀 편집 =========
 if (titleEl && titleEditBtn) {
   titleEl.addEventListener("click", () => {
@@ -1776,4 +1860,3 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
     { passive: false }
   );
 }
-
