@@ -690,9 +690,9 @@ body {
   inset: 0;
   background: rgba(15, 23, 42, 0.6);
   display: none;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 999;
+  align-items: center;      /* flex-end → center */
+  justify-content: center;  /* 가운데 정렬 유지 */
+  z-index: 1100;           /* 미니플레이어(1000)보다 위로 */
 }
 
 .cover-sheet-backdrop.show {
@@ -703,11 +703,12 @@ body {
   width: 100%;
   max-width: 480px;
   background: #020617;
-  border-radius: 16px 16px 0 0;
+  border-radius: 16px;      /* 16px 16px 0 0 → 완전 모서리 둥글게 */
   border-top: none;
   padding: 12px 16px 16px;
   box-sizing: border-box;
 }
+
 
 .cover-sheet-title {
   font-size: 14px;
