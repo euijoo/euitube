@@ -31,7 +31,22 @@
 
     <!-- 메인 화면 (로그인 후에만 표시) -->
     <div id="main-screen" class="main-screen hidden">
-      <main class="phone-shell">
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <span class="app-logo-text">ejtube</span>
+    </div>
+    <div class="top-bar-right">
+      <img id="userAvatar" class="top-bar-avatar" src="" alt="profile" />
+      <span class="top-bar-welcome">
+        Welcome <span id="userNick"></span>
+      </span>
+      <button id="logoutButton" class="btn secondary">Logout</button>
+    </div>
+  </header>
+
+  <main class="phone-shell">
+    <!-- cover-section ... -->
+
 
         <!-- 상단 커버 & 정보 -->
         <section class="cover-section">
@@ -57,7 +72,6 @@
     </button>
   </div>
   <p id="artist" class="track-artist-lg"></p>
-  <p id="userEmail" class="user-email"></p>
 </div>
 
         </section>
