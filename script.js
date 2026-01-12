@@ -15,6 +15,7 @@ const INITIAL_MAIN_COVERS = [
   "https://i.pinimg.com/736x/ba/48/21/ba48216b2877caa1de692ba7c80c6a6d.jpg",
 ];
 
+// ✅ 상단 커버 + 미니플레이어를 함께 초기화
 function setRandomMainCover() {
   if (!thumbnailEl) return;
   if (!INITIAL_MAIN_COVERS.length) return;
@@ -22,9 +23,32 @@ function setRandomMainCover() {
   const idx = Math.floor(Math.random() * INITIAL_MAIN_COVERS.length);
   const url = INITIAL_MAIN_COVERS[idx];
 
+  // 상단 메인 커버
   thumbnailEl.src = url;
   if (titleEl) titleEl.textContent = "Welcome";
   if (artistEl) artistEl.textContent = "Select album or track";
+
+  // 미니 플레이어 동기화
+  const miniThumbNew = document.getElementById("miniThumbNew");
+  const miniTitleNew = document.getElementById("miniTitleNew");
+  const miniArtistNew = document.getElementById("miniArtistNew");
+  const playPauseIcon = document.getElementById("miniPlayPauseIcon");
+  const currentEl = document.getElementById("miniCurrentTime");
+  const totalEl = document.getElementById("miniTotalTime");
+  const fillEl = document.getElementById("miniProgressFill");
+
+  if (miniThumbNew) miniThumbNew.src = url;
+  if (miniTitleNew) {
+    miniTitleNew.textContent = "Welcome";
+    miniTitleNew.classList.remove("marquee-on");
+    miniTitleNew.style.removeProperty("--mini-title-offset");
+  }
+  if (miniArtistNew) miniArtistNew.textContent = "Select album or track";
+
+  if (playPauseIcon) playPauseIcon.textContent = "▶";
+  if (currentEl) currentEl.textContent = "00:00";
+  if (totalEl) totalEl.textContent = "00:00";
+  if (fillEl) fillEl.style.width = "0%";
 }
 
 // ===== Firebase SDK import & 초기화 =====
@@ -1107,10 +1131,10 @@ function closeAllTrackMenus() {
   });
 }
 
+// ✅ 상단 랜덤 커버는 유지, 텍스트/미니플레이어만 초기화
 function resetNowPlayingUI() {
   titleEl.textContent = "제목";
   artistEl.textContent = "아티스트";
-  thumbnailEl.removeAttribute("src");
 
   const miniThumbNew = document.getElementById("miniThumbNew");
   const miniTitleNew = document.getElementById("miniTitleNew");
@@ -1649,7 +1673,7 @@ onAuthStateChanged(auth, async (user) => {
     currentAlbumId = null;
     resetNowPlayingUI();
 
-    // ✅ 로그인 후 랜덤 메인 커버
+    // ✅ 로그인 후 랜덤 메인 커버 + 미니플레이어
     setRandomMainCover();
   } else {
     currentUser = null;
@@ -1662,7 +1686,7 @@ onAuthStateChanged(auth, async (user) => {
 
     resetNowPlayingUI();
 
-    // ✅ 비로그인 화면에서도 랜덤 메인 커버
+    // ✅ 비로그인 화면에서도 랜덤 메인 커버 + 미니플레이어
     setRandomMainCover();
 
     loginScreen.style.display = "flex";
