@@ -47,7 +47,8 @@ const googleLoginButton = document.getElementById("googleLoginButton");
 const loginError = document.getElementById("loginError");
 const mainScreen = document.getElementById("main-screen");
 const logoutButton = document.getElementById("logoutButton");
-const userEmailEl = document.getElementById("userEmail");
+const userAvatarEl = document.getElementById("userAvatar");
+const userNickEl = document.getElementById("userNick");
 const addButton = document.getElementById("addButton");
 const videoUrlInput = document.getElementById("videoUrl");
 const clearListButton = document.getElementById("clearListButton");
@@ -1183,15 +1184,27 @@ onAuthStateChanged(auth, async (user) => {
   console.log("auth state changed:", user);
 
   if (user) {
-    currentUser = user;
-    userEmailEl.textContent = user.email || "";
+  currentUser = user;
 
-    loginScreen.style.display = "none";
-    mainScreen.classList.remove("hidden");
+  const email = user.email || "";
+  const nick = email.includes("@") ? email.split("@")[0] : email;
+  if (userNickEl) userNickEl.textContent = nick;
 
-    await loadAlbumsFromFirestore();
-    await loadTracksFromFirestore();
-    renderTrackList();
+  // 프로필 이미지 (Google 계정 photoURL 사용)
+  if (userAvatarEl) {
+    if (user.photoURL) {
+      userAvatarEl.src = user.photoURL;
+    } else {
+      userAvatarEl.src = "";
+    }
+  }
+
+  loginScreen.style.display = "none";
+  mainScreen.classList.remove("hidden");
+
+  await loadAlbumsFromFirestore();
+  await loadTracksFromFirestore();
+  renderTrackList();
 
     if (tracks.length > 0) {
       const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -1202,16 +1215,19 @@ onAuthStateChanged(auth, async (user) => {
       resetNowPlayingUI();
     }
   } else {
-    currentUser = null;
-    tracks = [];
-    currentTrackId = null;
+  currentUser = null;
+  tracks = [];
+  currentTrackId = null;
 
-    resetNowPlayingUI();
+  if (userNickEl) userNickEl.textContent = "";
+  if (userAvatarEl) userAvatarEl.src = "";
 
-    loginScreen.style.display = "flex";
-    mainScreen.classList.add("hidden");
-    loginError.textContent = "";
-  }
+  resetNowPlayingUI();
+
+  loginScreen.style.display = "flex";
+  mainScreen.classList.add("hidden");
+  loginError.textContent = "";
+}
 });
 
 // ========= 입력/버튼 핸들러 =========
