@@ -1184,27 +1184,27 @@ onAuthStateChanged(auth, async (user) => {
   console.log("auth state changed:", user);
 
   if (user) {
-  currentUser = user;
+    currentUser = user;
 
-  const email = user.email || "";
-  const nick = email.includes("@") ? email.split("@")[0] : email;
-  if (userNickEl) userNickEl.textContent = nick;
+    const email = user.email || "";
+    const nick = email.includes("@") ? email.split("@")[0] : email;
+    if (userNickEl) userNickEl.textContent = nick;
 
-  // 프로필 이미지 (Google 계정 photoURL 사용)
-  if (userAvatarEl) {
-    if (user.photoURL) {
-      userAvatarEl.src = user.photoURL;
-    } else {
-      userAvatarEl.src = "";
+    // ✅ Google 프로필 이미지 연동
+    if (userAvatarEl) {
+      if (user.photoURL) {
+        userAvatarEl.src = user.photoURL;
+      } else {
+        userAvatarEl.src = ""; // 기본 이미지 쓰고 싶으면 여기서 대체
+      }
     }
-  }
 
-  loginScreen.style.display = "none";
-  mainScreen.classList.remove("hidden");
+    loginScreen.style.display = "none";
+    mainScreen.classList.remove("hidden");
 
-  await loadAlbumsFromFirestore();
-  await loadTracksFromFirestore();
-  renderTrackList();
+    await loadAlbumsFromFirestore();
+    await loadTracksFromFirestore();
+    renderTrackList();
 
     if (tracks.length > 0) {
       const randomIndex = Math.floor(Math.random() * tracks.length);
