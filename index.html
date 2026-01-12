@@ -32,17 +32,20 @@
     <!-- 메인 화면 (로그인 후에만 표시) -->
     <div id="main-screen" class="main-screen hidden">
   <header class="top-bar">
-    <div class="top-bar-left">
-      <span class="app-logo-text">ejtube</span>
-    </div>
-    <div class="top-bar-right">
-      <img id="userAvatar" class="top-bar-avatar" src="" alt="profile" />
-      <span class="top-bar-welcome">
-        Welcome <span id="userNick"></span>
-      </span>
-      <button id="logoutButton" class="btn secondary">Logout</button>
-    </div>
-  </header>
+  <div class="top-bar-left">
+    <button class="app-logo-text" id="appLogoButton" type="button">
+      ejtube
+    </button>
+  </div>
+  <div class="top-bar-right">
+    <span class="top-bar-welcome">
+      Welcome <span id="userNick"></span>
+    </span>
+    <img id="userAvatar" class="top-bar-avatar" src="" alt="profile" />
+    <!-- 기존 Logout 버튼은 삭제 -->
+    <!-- <button id="logoutButton" class="btn secondary">Logout</button> -->
+  </div>
+</header>
 
   <main class="phone-shell">
     <!-- cover-section ... -->
