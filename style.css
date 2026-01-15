@@ -10,23 +10,32 @@ body {
 }
 
 body {
+  height: 100vh;        /* ✅ 전체 화면 고정 높이 */
+  overflow: hidden;     /* ✅ 페이지 전체 스크롤 막기 */
   background: #050509;
   color: #f9fafb;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.app {
-  min-height: 100vh;
+app {
+  height: 100vh;        /* ✅ min-height → height */
   width: 100%;
   background: #050509;
 }
 
 .phone-shell {
   width: 100%;
-  min-height: 100vh;
+  /* min-height: 100vh;  ← 이 줄 삭제 */
   margin: 0;
   padding: 0 16px 112px;
   box-sizing: border-box;
+
+  /* ✅ 가운데 영역로 동작 */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;      /* 안쪽 특정 영역만 스크롤 */
 }
 
 /* ===== 로그인 화면 ===== */
@@ -66,6 +75,21 @@ body {
 .main-screen.hidden {
   display: none;
 }
+
+
+/* ===== 메인 화면 레이아웃(상단/가운데/하단) ===== */
+
+#login-screen,
+#main-screen {
+  height: 100vh;           /* 로그인/메인 모두 화면 전체 채우기 */
+}
+
+.main-screen {
+  display: flex;
+  flex-direction: column;  /* 상단/가운데/하단 세로 배치 */
+  height: 100vh;
+}
+
 
 /* ===== 상단 바 ===== */
 
@@ -970,4 +994,12 @@ body {
 .delete-confirm-btn.yes {
   background: #ef4444;
   color: #f9fafb;
+}
+
+/* cover-section + playlist-section + player-container를 감싸는 래퍼 */
+.playlist-scroll-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;              /* ✅ 이 부분만 세로 스크롤 */
+  -webkit-overflow-scrolling: touch;
 }
